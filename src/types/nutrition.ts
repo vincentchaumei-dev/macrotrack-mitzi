@@ -1,7 +1,12 @@
 export type MealType = "breakfast" | "lunch" | "snack" | "dinner" | "other";
 
-export type FoodSource = "label" | "manual" | "unknown" | "openfoodfacts";
-
+export type FoodSource =
+  | "label"
+  | "manual"
+  | "unknown"
+  | "openfoodfacts"
+  | "ciqual";
+  
 export type Sex = "female" | "male";
 
 export type ActivityLevel =

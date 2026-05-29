@@ -1,10 +1,11 @@
 import { Food } from "@/types/nutrition";
+import { ciqualFoods } from "@/data/ciqualFoods.generated";
 
 function now() {
   return new Date().toISOString();
 }
 
-export const seedFoods: Food[] = [
+const personalSeedFoods: Food[] = [
   {
     id: "seed-toastiligne-pain-complet",
     name: "Pain de mie complet Toastiligne",
@@ -12,6 +13,7 @@ export const seedFoods: Food[] = [
     category: "Pains & boulangerie",
     servingName: "1 tranche",
     servingSizeG: 38.4,
+    isFavorite: true,
     caloriesPer100g: 226,
     proteinPer100g: 10,
     carbsPer100g: 39,
@@ -22,6 +24,7 @@ export const seedFoods: Food[] = [
     saltPer100g: 0.98,
     source: "label",
     verified: true,
+    dataQualityStatus: "complete",
     createdAt: now(),
     updatedAt: now(),
   },
@@ -32,6 +35,7 @@ export const seedFoods: Food[] = [
     category: "Fromages",
     servingName: "1 portion",
     servingSizeG: 25,
+    isFavorite: true,
     caloriesPer100g: 85,
     proteinPer100g: 16,
     carbsPer100g: 4.5,
@@ -42,7 +46,10 @@ export const seedFoods: Food[] = [
     saltPer100g: 1.3,
     source: "label",
     verified: true,
+    dataQualityStatus: "complete",
     createdAt: now(),
     updatedAt: now(),
   },
 ];
+
+export const seedFoods: Food[] = [...personalSeedFoods, ...ciqualFoods];

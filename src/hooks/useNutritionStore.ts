@@ -43,6 +43,23 @@ const defaultData: AppData = {
   weightLogs: [],
 };
 
+function mergeSeedFoods(existingFoods: Food[]) {
+  const merged = new Map<string, Food>();
+
+  seedFoods.forEach((food) => {
+    merged.set(food.id, food);
+  });
+
+  existingFoods.forEach((food) => {
+    merged.set(food.id, {
+      ...merged.get(food.id),
+      ...food,
+    });
+  });
+
+  return Array.from(merged.values());
+}
+
 function normalizeImportedData(input: Partial<AppData>): AppData {
   return {
     onboardingCompleted:
@@ -50,7 +67,9 @@ function normalizeImportedData(input: Partial<AppData>): AppData {
         ? input.onboardingCompleted
         : false,
     profile: input.profile ?? defaultProfile,
-    foods: Array.isArray(input.foods) ? input.foods : seedFoods,
+    foods: Array.isArray(input.foods)
+      ? mergeSeedFoods(input.foods)
+      : seedFoods,
     meals: Array.isArray(input.meals) ? input.meals : [],
     mealTemplates: Array.isArray(input.mealTemplates)
       ? input.mealTemplates
