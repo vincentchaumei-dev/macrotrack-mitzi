@@ -1,6 +1,6 @@
 export type MealType = "breakfast" | "lunch" | "snack" | "dinner" | "other";
 
-export type FoodSource = "label" | "manual" | "unknown";
+export type FoodSource = "label" | "manual" | "unknown" | "openfoodfacts";
 
 export type Sex = "female" | "male";
 
@@ -33,6 +33,10 @@ export type Food = {
   id: string;
   name: string;
   brand?: string;
+  barcode?: string;
+  externalUrl?: string;
+  imageUrl?: string;
+  dataQualityStatus?: "complete" | "partial" | "missing" | "needs_review";
   category: string;
   servingName?: string;
   servingSizeG?: number | null;
