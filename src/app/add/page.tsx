@@ -41,33 +41,42 @@ export default function AddMealPage() {
   const [selectedFoodId, setSelectedFoodId] = useState("");
   const [quantityG, setQuantityG] = useState("");
   const [items, setItems] = useState<MealItem[]>([]);
+  const [includeFullDatabase, setIncludeFullDatabase] = useState(false);
 
   const selectedFood = foods.find((food) => food.id === selectedFoodId) ?? null;
 
   const filteredFoods = useMemo(() => {
     const hasQuery = query.trim().length > 0;
-  
+
     return foods
       .filter((food) => {
-        if (!hasQuery) {
-          return shouldShowFoodInSimpleMode(food, query);
-        }
-  
-        return foodMatchesSearch({
-          foodName: food.name,
-          brand: food.brand,
-          category: food.category,
-          query,
-        });
+        const matchesSimpleMode =
+          includeFullDatabase || shouldShowFoodInSimpleMode(food, query);
+
+        const matchesQuery =
+          !hasQuery ||
+          foodMatchesSearch({
+            foodName: food.name,
+            brand: food.brand,
+            category: food.category,
+            query,
+          });
+
+        return matchesSimpleMode && matchesQuery;
       })
       .sort((a, b) => compareFoodsForSearch(a, b, query))
-      .slice(0, 20);
-  }, [foods, query]);
+      .slice(0, hasQuery || includeFullDatabase ? 25 : 12);
+  }, [foods, query, includeFullDatabase]);
 
   const favoriteFoods = foods
     .filter((food) => food.isFavorite)
     .sort((a, b) => compareFoodsForSearch(a, b, ""))
-    .slice(0, 8);
+    .slice(0, 10);
+
+  const essentialFoods = foods
+    .filter((food) => food.isEssential && !food.isFavorite)
+    .sort((a, b) => compareFoodsForSearch(a, b, ""))
+    .slice(0, 12);
 
   const draftMeal = {
     id: "draft",
@@ -145,7 +154,8 @@ export default function AddMealPage() {
           </h1>
           <p className="mt-2 max-w-2xl text-gray-500">
             Recherche un aliment, indique la quantité, puis construis ton repas.
-            Les aliments simples sont priorisés dans les résultats.
+            Par défaut, l’app privilégie les essentiels, favoris et produits
+            ajoutés.
           </p>
         </div>
       </div>
@@ -193,7 +203,29 @@ export default function AddMealPage() {
           </section>
 
           <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-            <h2 className="text-xl font-semibold">Ajouter un aliment</h2>
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+              <div>
+                <h2 className="text-xl font-semibold">Ajouter un aliment</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Les résultats simples remontent en premier. La base Ciqual
+                  complète reste disponible si besoin.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIncludeFullDatabase((current) => !current)}
+                className={`rounded-full px-4 py-2 text-sm font-medium ${
+                  includeFullDatabase
+                    ? "bg-[#E85A0C] text-white"
+                    : "border border-black/10 text-gray-600 hover:bg-black/5"
+                }`}
+              >
+                {includeFullDatabase
+                  ? "Base complète active"
+                  : "Inclure Ciqual complet"}
+              </button>
+            </div>
 
             {favoriteFoods.length > 0 && (
               <div className="mt-5">
@@ -216,6 +248,27 @@ export default function AddMealPage() {
               </div>
             )}
 
+            {essentialFoods.length > 0 && (
+              <div className="mt-5">
+                <p className="mb-2 text-sm font-medium text-gray-700">
+                  Essentiels rapides
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {essentialFoods.map((food) => (
+                    <button
+                      key={food.id}
+                      type="button"
+                      onClick={() => selectFood(food)}
+                      className="rounded-full border border-orange-100 bg-orange-50 px-4 py-2 text-sm text-orange-900 hover:bg-orange-100"
+                    >
+                      {food.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <form onSubmit={addItem} className="mt-5 space-y-4">
               <Field label="Rechercher un aliment">
                 <input
@@ -230,7 +283,7 @@ export default function AddMealPage() {
               </Field>
 
               {query.trim().length > 0 && !selectedFood && (
-                <div className="max-h-80 space-y-2 overflow-y-auto rounded-2xl border border-black/5 bg-[#FAFAF8] p-2">
+                <div className="max-h-96 space-y-2 overflow-y-auto rounded-2xl border border-black/5 bg-[#FAFAF8] p-2">
                   {filteredFoods.length === 0 ? (
                     <div className="p-4 text-sm text-gray-500">
                       Aucun aliment trouvé. Tu peux l’ajouter dans la page
@@ -238,7 +291,6 @@ export default function AddMealPage() {
                     </div>
                   ) : (
                     filteredFoods.map((food) => {
-                      const selected = food.id === selectedFoodId;
                       const complete = isFoodComplete(food);
 
                       return (
@@ -246,61 +298,52 @@ export default function AddMealPage() {
                           key={food.id}
                           type="button"
                           onClick={() => selectFood(food)}
-                          className={`w-full rounded-xl p-3 text-left transition ${
-                            selected
-                              ? "bg-[#10121A] text-white"
-                              : "bg-white hover:bg-black/5"
-                          }`}
+                          className="w-full rounded-xl bg-white p-3 text-left transition hover:bg-black/5"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="font-medium">{food.name}</p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-medium">{food.name}</p>
 
-                              <p
-                                className={`mt-1 text-sm ${
-                                  selected ? "text-white/60" : "text-gray-500"
-                                }`}
-                              >
+                                {food.isEssential && (
+                                  <span className="rounded-full bg-[#E85A0C] px-2 py-1 text-xs text-white">
+                                    Essentiel
+                                  </span>
+                                )}
+
+                                {food.isFavorite && (
+                                  <span className="rounded-full bg-[#10121A] px-2 py-1 text-xs text-white">
+                                    Favori
+                                  </span>
+                                )}
+                              </div>
+
+                              <p className="mt-1 text-sm text-gray-500">
                                 {food.brand ? `${food.brand} · ` : ""}
                                 {food.category}
                               </p>
 
-                              <p
-                                className={`mt-1 text-xs ${
-                                  selected ? "text-white/40" : "text-gray-400"
-                                }`}
-                              >
+                              {food.officialName &&
+                                food.officialName !== food.name && (
+                                  <p className="mt-1 text-xs text-gray-400">
+                                    Nom officiel : {food.officialName}
+                                  </p>
+                                )}
+
+                              <p className="mt-1 text-xs text-gray-400">
                                 Source : {getSourceLabel(food.source)}
                               </p>
                             </div>
 
-                            <div className="flex shrink-0 flex-col items-end gap-1">
-                              {food.isFavorite && (
-                                <span
-                                  className={`rounded-full px-2 py-1 text-xs ${
-                                    selected
-                                      ? "bg-white/10 text-white"
-                                      : "bg-[#10121A] text-white"
-                                  }`}
-                                >
-                                  Favori
-                                </span>
-                              )}
-
-                              <span
-                                className={`rounded-full px-2 py-1 text-xs ${
-                                  complete
-                                    ? selected
-                                      ? "bg-green-400/20 text-green-100"
-                                      : "bg-green-100 text-green-800"
-                                    : selected
-                                    ? "bg-orange-400/20 text-orange-100"
-                                    : "bg-orange-100 text-orange-800"
-                                }`}
-                              >
-                                {complete ? "Complet" : "À compléter"}
-                              </span>
-                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-1 text-xs ${
+                                complete
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-orange-100 text-orange-800"
+                              }`}
+                            >
+                              {complete ? "Complet" : "À compléter"}
+                            </span>
                           </div>
                         </button>
                       );
@@ -316,14 +359,34 @@ export default function AddMealPage() {
                       <p className="text-sm text-gray-500">
                         Aliment sélectionné
                       </p>
-                      <h3 className="mt-1 font-semibold">
-                        {selectedFood.name}
-                      </h3>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold">{selectedFood.name}</h3>
+
+                        {selectedFood.isEssential && (
+                          <span className="rounded-full bg-[#E85A0C] px-2 py-1 text-xs text-white">
+                            Essentiel
+                          </span>
+                        )}
+
+                        {selectedFood.isFavorite && (
+                          <span className="rounded-full bg-[#10121A] px-2 py-1 text-xs text-white">
+                            Favori
+                          </span>
+                        )}
+                      </div>
 
                       <p className="mt-1 text-sm text-gray-500">
                         {selectedFood.brand ? `${selectedFood.brand} · ` : ""}
                         {selectedFood.category}
                       </p>
+
+                      {selectedFood.officialName &&
+                        selectedFood.officialName !== selectedFood.name && (
+                          <p className="mt-1 text-xs text-gray-400">
+                            Nom officiel : {selectedFood.officialName}
+                          </p>
+                        )}
 
                       <p className="mt-1 text-xs text-gray-400">
                         Source : {getSourceLabel(selectedFood.source)}
