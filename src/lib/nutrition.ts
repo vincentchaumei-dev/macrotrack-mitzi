@@ -407,3 +407,40 @@ export function getSimpleNutritionTip(profile: UserProfile) {
 
   return "Pour le maintien, l’objectif est de rester proche de ta dépense journalière moyenne, sans chercher la perfection jour par jour.";
 }
+
+export function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/œ/g, "oe")
+    .replace(/Œ/g, "oe")
+    .toLowerCase()
+    .trim();
+}
+
+export function foodMatchesSearch({
+  foodName,
+  brand,
+  category,
+  query,
+}: {
+  foodName: string;
+  brand?: string;
+  category: string;
+  query: string;
+}) {
+  const normalizedQuery = normalizeSearchText(query);
+
+  if (!normalizedQuery) return true;
+
+  const searchableText = normalizeSearchText(
+    `${foodName} ${brand ?? ""} ${category}`
+  );
+
+  const queryWords = normalizedQuery
+    .split(" ")
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  return queryWords.every((word) => searchableText.includes(word));
+}

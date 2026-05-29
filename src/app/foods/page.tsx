@@ -3,7 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
-import { isFoodComplete } from "@/lib/nutrition";
+import { foodMatchesSearch, isFoodComplete } from "@/lib/nutrition";
 import { Food, FoodSource } from "@/types/nutrition";
 
 const categories = [
@@ -119,29 +119,43 @@ export default function FoodsPage() {
   const editingFood = foods.find((food) => food.id === editingFoodId) ?? null;
 
   const filteredFoods = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    return foods.filter((food) => {
-      const complete = isFoodComplete(food);
-
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        food.name.toLowerCase().includes(normalizedQuery) ||
-        food.brand?.toLowerCase().includes(normalizedQuery) ||
-        food.category.toLowerCase().includes(normalizedQuery);
-
-      const matchesCategory =
-        categoryFilter === "Toutes" || food.category === categoryFilter;
-
-      const matchesStatus =
-        statusFilter === "Tous" ||
-        (statusFilter === "Complets" && complete) ||
-        (statusFilter === "À compléter" && !complete);
-
-      const matchesFavorite = !showOnlyFavorites || food.isFavorite;
-
-      return matchesQuery && matchesCategory && matchesStatus && matchesFavorite;
-    });
+    const hasQuery = query.trim().length > 0;
+  
+    return foods
+      .filter((food) => {
+        const complete = isFoodComplete(food);
+  
+        const matchesQuery =
+          !hasQuery ||
+          foodMatchesSearch({
+            foodName: food.name,
+            brand: food.brand,
+            category: food.category,
+            query,
+          });
+  
+        const matchesCategory =
+          categoryFilter === "Toutes" || food.category === categoryFilter;
+  
+        const matchesStatus =
+          statusFilter === "Tous" ||
+          (statusFilter === "Complets" && complete) ||
+          (statusFilter === "À compléter" && !complete);
+  
+        const matchesFavorite = !showOnlyFavorites || food.isFavorite;
+  
+        return matchesQuery && matchesCategory && matchesStatus && matchesFavorite;
+      })
+      .sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+  
+        if (a.source !== "ciqual" && b.source === "ciqual") return -1;
+        if (a.source === "ciqual" && b.source !== "ciqual") return 1;
+  
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, hasQuery || showOnlyFavorites ? 80 : 30);
   }, [foods, query, categoryFilter, statusFilter, showOnlyFavorites]);
 
   const completeFoodsCount = foods.filter(isFoodComplete).length;
@@ -402,7 +416,7 @@ export default function FoodsPage() {
             <div>
               <h2 className="text-xl font-semibold">Mes aliments</h2>
               <p className="mt-1 text-sm text-gray-500">
-                {filteredFoods.length} résultat(s) affiché(s).
+              {filteredFoods.length} résultat(s) affiché(s). Affichage limité pour garder l’app rapide.
               </p>
             </div>
 
@@ -484,6 +498,18 @@ export default function FoodsPage() {
                           )}
                         </div>
 
+                        <span className="rounded-full bg-white px-2 py-1 text-xs text-gray-600 ring-1 ring-black/5">
+  {food.source === "ciqual"
+    ? "Ciqual"
+    : food.source === "openfoodfacts"
+    ? "Open Food Facts"
+    : food.source === "label"
+    ? "Étiquette"
+    : food.source === "manual"
+    ? "Manuel"
+    : "Source inconnue"}
+</span>
+
                         <p className="mt-1 text-sm text-gray-500">
                           {food.brand ? `${food.brand} · ` : ""}
                           {food.category}
@@ -552,6 +578,8 @@ export default function FoodsPage() {
     </AppShell>
   );
 }
+
+
 
 function Field({
   label,
