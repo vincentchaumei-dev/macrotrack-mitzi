@@ -36,6 +36,7 @@ export type Food = {
   category: string;
   servingName?: string;
   servingSizeG?: number | null;
+  isFavorite?: boolean;
 
   caloriesPer100g: number | null;
   proteinPer100g: number | null;

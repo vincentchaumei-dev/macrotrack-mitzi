@@ -307,3 +307,103 @@ export function explainGoal(profile: UserProfile) {
 
   return `Ta dépense journalière est estimée à environ ${tdee} kcal. L’objectif maintien garde une cible proche de cette dépense.`;
 }
+
+export function getGoalLabel(profile: UserProfile) {
+  return goalTypeLabels[profile.goalType];
+}
+
+export function getDayCoachMessage({
+  calories,
+  proteinG,
+  fatG,
+  carbsG,
+  goals,
+  profile,
+}: {
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+  goals: NutritionGoals;
+  profile: UserProfile;
+}) {
+  if (calories === null) {
+    return {
+      title: "Commence par ajouter un repas.",
+      description:
+        "Une fois le premier repas ajouté, l’app pourra analyser la journée et t’aider à ajuster simplement.",
+      tone: "neutral" as const,
+    };
+  }
+
+  const caloriesProgress = calories / goals.calories;
+  const proteinProgress = proteinG === null ? 0 : proteinG / goals.proteinG;
+
+  if (caloriesProgress < 0.45) {
+    return {
+      title: "Journée encore très peu remplie.",
+      description:
+        "Il reste beaucoup de marge sur les calories. L’objectif est de suivre sans se restreindre trop fortement.",
+      tone: "neutral" as const,
+    };
+  }
+
+  if (profile.goalType === "fat_loss" && caloriesProgress > 1.1) {
+    return {
+      title: "Tu dépasses un peu la cible calories.",
+      description:
+        "Ce n’est pas grave sur une journée. Regarde surtout la moyenne sur plusieurs jours, pas un seul repas.",
+      tone: "warning" as const,
+    };
+  }
+
+  if (proteinProgress < 0.65 && caloriesProgress > 0.65) {
+    return {
+      title: "Les protéines sont encore un peu basses.",
+      description:
+        "Pour aider la satiété et préserver la masse musculaire, tu peux prévoir une source de protéines sur le prochain repas.",
+      tone: "warning" as const,
+    };
+  }
+
+  if (proteinProgress >= 0.9 && caloriesProgress <= 1.05) {
+    return {
+      title: "Journée bien alignée avec l’objectif.",
+      description:
+        "Les calories et les protéines sont cohérentes avec l’objectif actuel. Continue à suivre tranquillement.",
+      tone: "success" as const,
+    };
+  }
+
+  if (profile.goalType === "muscle_gain" && caloriesProgress < 0.85) {
+    return {
+      title: "Il manque encore un peu d’énergie.",
+      description:
+        "Pour une prise de masse, l’enjeu est souvent de manger assez régulièrement sans tout concentrer le soir.",
+      tone: "neutral" as const,
+    };
+  }
+
+  return {
+    title: "Journée en cours.",
+    description:
+      "Continue à ajouter les repas au fil de la journée. L’analyse devient plus utile quand la journée est complète.",
+    tone: "neutral" as const,
+  };
+}
+
+export function getSimpleNutritionTip(profile: UserProfile) {
+  if (profile.goalType === "fat_loss") {
+    return "Pour une perte de poids durable, l’objectif n’est pas de manger le moins possible, mais d’avoir un léger déficit régulier, avec assez de protéines et des repas rassasiants.";
+  }
+
+  if (profile.goalType === "muscle_gain") {
+    return "Pour une prise de masse propre, l’idée est de créer un léger surplus calorique, tout en gardant un bon apport en protéines et un entraînement régulier.";
+  }
+
+  if (profile.goalType === "recomposition") {
+    return "Pour une recomposition, la priorité est souvent la régularité : protéines suffisantes, entraînement sérieux, sommeil correct et suivi sur plusieurs semaines.";
+  }
+
+  return "Pour le maintien, l’objectif est de rester proche de ta dépense journalière moyenne, sans chercher la perfection jour par jour.";
+}

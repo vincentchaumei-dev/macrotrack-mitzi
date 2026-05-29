@@ -5,19 +5,34 @@ import { AppShell } from "@/components/layout/AppShell";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   calculateDayTotals,
-  calculateMealTotals,
+  calculateTdee,
   formatDateFr,
   formatMacro,
+  getDayCoachMessage,
+  getGoalLabel,
   getProgress,
+  getSimpleNutritionTip,
   mealTypeLabels,
   todayLocalDate,
+  calculateMealTotals,
 } from "@/lib/nutrition";
 
 export default function Home() {
-  const { goals, getMealsByDate, hasLoaded } = useNutritionStore();
+  const { profile, goals, getMealsByDate, hasLoaded } = useNutritionStore();
+
   const today = todayLocalDate();
   const meals = getMealsByDate(today);
   const totals = calculateDayTotals(meals);
+  const tdee = calculateTdee(profile);
+
+  const coachMessage = getDayCoachMessage({
+    calories: totals.calories,
+    proteinG: totals.proteinG,
+    carbsG: totals.carbsG,
+    fatG: totals.fatG,
+    goals,
+    profile,
+  });
 
   if (!hasLoaded) {
     return (
@@ -29,7 +44,7 @@ export default function Home() {
 
   return (
     <AppShell>
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <p className="text-sm font-medium text-[#E85A0C]">
             {formatDateFr(today)}
@@ -37,14 +52,15 @@ export default function Home() {
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">
             Dashboard nutrition
           </h1>
-          <p className="mt-2 text-gray-500">
-            Suivi rapide de tes calories, macros et repas du jour.
+          <p className="mt-2 max-w-2xl text-gray-500">
+            Objectif actuel : {getGoalLabel(profile).toLowerCase()} · dépense
+            journalière estimée : {tdee} kcal.
           </p>
         </div>
 
         <Link
           href="/add"
-          className="hidden rounded-full bg-[#10121A] px-5 py-3 text-sm font-medium text-white shadow-sm md:block"
+          className="rounded-full bg-[#10121A] px-5 py-3 text-center text-sm font-medium text-white shadow-sm"
         >
           Ajouter un repas
         </Link>
@@ -78,6 +94,28 @@ export default function Home() {
         />
       </section>
 
+      <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <InfoCard
+          label="Dépense estimée"
+          value={`${tdee} kcal`}
+          description="Estimation de maintien selon le profil et l’activité."
+        />
+        <InfoCard
+          label="Objectif calories"
+          value={`${goals.calories} kcal`}
+          description="Cible journalière actuelle, modifiable dans Objectifs."
+        />
+        <InfoCard
+          label="Calories restantes"
+          value={
+            totals.calories === null
+              ? "—"
+              : `${Math.max(goals.calories - totals.calories, 0)} kcal`
+          }
+          description="À interpréter sur la moyenne de plusieurs jours."
+        />
+      </section>
+
       {totals.incompleteItems > 0 && (
         <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900">
           {totals.incompleteItems} aliment(s) du jour ont des valeurs
@@ -107,9 +145,10 @@ export default function Home() {
 
           {meals.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-black/10 bg-[#FAFAF8] p-6 text-center">
-              <p className="font-medium">Commence ta journée nutritionnelle</p>
+              <p className="font-medium">Commence le suivi nutritionnel</p>
               <p className="mt-1 text-sm text-gray-500">
-                Ajoute ton premier repas pour calculer tes calories et macros.
+                Ajoute un premier repas pour calculer calories, protéines,
+                glucides et lipides.
               </p>
             </div>
           ) : (
@@ -148,27 +187,32 @@ export default function Home() {
           )}
         </div>
 
-        <aside className="rounded-3xl bg-[#10121A] p-6 text-white shadow-sm">
-          <p className="text-sm text-white/60">Analyse rapide</p>
-          <h2 className="mt-2 text-2xl font-semibold">
-            {totals.calories === null
-              ? "Ajoute ton premier repas pour démarrer le suivi."
-              : `Il te reste environ ${Math.max(
-                  goals.calories - totals.calories,
-                  0
-                )} kcal aujourd’hui.`}
-          </h2>
+        <aside className="space-y-6">
+          <div
+            className={`rounded-3xl p-6 shadow-sm ${
+              coachMessage.tone === "success"
+                ? "bg-green-900 text-white"
+                : coachMessage.tone === "warning"
+                ? "bg-orange-900 text-white"
+                : "bg-[#10121A] text-white"
+            }`}
+          >
+            <p className="text-sm text-white/60">Coach nutrition</p>
+            <h2 className="mt-2 text-2xl font-semibold">
+              {coachMessage.title}
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-white/70">
+              {coachMessage.description}
+            </p>
+          </div>
 
-          <div className="mt-6 space-y-4">
-            <Insight
-              label="Objectif protéines"
-              value={`${getProgress(totals.proteinG, goals.proteinG)}% atteint`}
-            />
-            <Insight label="Repas enregistrés" value={`${meals.length} repas`} />
-            <Insight
-              label="Statut journée"
-              value={meals.length > 0 ? "En cours" : "À compléter"}
-            />
+          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+            <p className="text-sm font-medium text-[#E85A0C]">
+              Conseil simple
+            </p>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              {getSimpleNutritionTip(profile)}
+            </p>
           </div>
         </aside>
       </section>
@@ -209,11 +253,20 @@ function StatCard({
   );
 }
 
-function Insight({ label, value }: { label: string; value: string }) {
+function InfoCard({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: string;
+  description: string;
+}) {
   return (
-    <div className="rounded-2xl bg-white/10 p-4">
-      <p className="text-sm text-white/50">{label}</p>
-      <p className="mt-1 font-medium">{value}</p>
+    <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
+      <p className="mt-2 text-sm text-gray-500">{description}</p>
     </div>
   );
 }
