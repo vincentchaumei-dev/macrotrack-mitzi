@@ -2,6 +2,18 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import {
+  DangerButton,
+  EmptyState,
+  GhostButton,
+  PageHeader,
+  Pill,
+  PremiumCard,
+  PrimaryButton,
+  SectionTitle,
+  SoftButton,
+  StatCard,
+} from "@/components/ui/PremiumUI";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   compareFoodsForSearch,
@@ -32,6 +44,10 @@ const categories = [
   "Plats préparés",
   "Autre",
 ];
+
+type StatusFilter = "Tous" | "Complets" | "À compléter";
+
+const statusFilters: StatusFilter[] = ["Tous", "Complets", "À compléter"];
 
 type FoodFormState = {
   name: string;
@@ -134,7 +150,7 @@ function formToFoodInput(form: FoodFormState) {
   };
 }
 
-function getSourceLabel(source: FoodSource) {
+function getSourceLabel(source: FoodSource | undefined) {
   if (source === "ciqual") return "Ciqual";
   if (source === "openfoodfacts") return "Open Food Facts";
   if (source === "label") return "Étiquette";
@@ -149,7 +165,7 @@ export default function FoodsPage() {
   const [editingFoodId, setEditingFoodId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Toutes");
-  const [statusFilter, setStatusFilter] = useState("Tous");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("Tous");
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [includeFullDatabase, setIncludeFullDatabase] = useState(false);
 
@@ -193,7 +209,7 @@ export default function FoodsPage() {
         );
       })
       .sort((a, b) => compareFoodsForSearch(a, b, query))
-      .slice(0, hasQuery || showOnlyFavorites || includeFullDatabase ? 80 : 40);
+      .slice(0, hasQuery || showOnlyFavorites || includeFullDatabase ? 90 : 42);
   }, [
     foods,
     query,
@@ -268,421 +284,332 @@ export default function FoodsPage() {
 
   return (
     <AppShell>
-      <div className="mb-8">
-        <p className="text-sm font-medium text-[#E85A0C]">Base alimentaire</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Aliments</h1>
-        <p className="mt-2 max-w-3xl text-gray-500">
-          Recherche, ajoute et modifie les aliments. Par défaut, l’app privilégie
-          les aliments essentiels, favoris et produits ajoutés pour éviter de
-          noyer l’utilisateur dans toute la base Ciqual.
-        </p>
-      </div>
-
-      <section className="mb-6 grid gap-4 md:grid-cols-4">
-        <Stat label="Total aliments" value={`${foods.length}`} />
-        <Stat label="Essentiels" value={`${essentialFoodsCount}`} />
-        <Stat label="Complets" value={`${completeFoodsCount}`} />
-        <Stat label="Favoris" value={`${favoriteFoodsCount}`} />
-      </section>
-
-      {incompleteFoodsCount > 0 && (
-        <div className="mb-6 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900">
-          {incompleteFoodsCount} aliment(s) ont des valeurs incomplètes. Ils
-          restent utilisables, mais les totaux peuvent être partiels.
-        </div>
-      )}
-
-      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.25fr]">
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold">
-                {editingFood ? "Modifier l’aliment" : "Ajouter un aliment"}
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Renseigne les valeurs pour 100 g depuis une étiquette ou une
-                source fiable. Les champs vides restent inconnus.
-              </p>
-            </div>
-
-            {editingFood && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-full border border-black/10 px-3 py-1.5 text-xs text-gray-500 hover:bg-black/5"
-              >
-                Annuler
-              </button>
-            )}
-          </div>
-
-          <div className="mt-5 space-y-4">
-            <Field label="Nom de l’aliment">
-              <input
-                value={form.name}
-                onChange={(event) => updateFormField("name", event.target.value)}
-                className="input"
-                placeholder="Ex : Riz basmati cuit"
-              />
-            </Field>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field label="Marque optionnelle">
-                <input
-                  value={form.brand}
-                  onChange={(event) =>
-                    updateFormField("brand", event.target.value)
-                  }
-                  className="input"
-                  placeholder="Ex : La Boulangère"
-                />
-              </Field>
-
-              <Field label="Catégorie">
-                <select
-                  value={form.category}
-                  onChange={(event) =>
-                    updateFormField("category", event.target.value)
-                  }
-                  className="input"
-                >
-                  {categories.map((item) => (
-                    <option key={item}>{item}</option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field label="Nom de portion">
-                <input
-                  value={form.servingName}
-                  onChange={(event) =>
-                    updateFormField("servingName", event.target.value)
-                  }
-                  className="input"
-                  placeholder="Ex : 1 tranche, 1 portion, 1 scoop"
-                />
-              </Field>
-
-              <Field label="Poids portion en g">
-                <input
-                  value={form.servingSizeG}
-                  onChange={(event) =>
-                    updateFormField("servingSizeG", event.target.value)
-                  }
-                  className="input"
-                  placeholder="Ex : 38"
-                />
-              </Field>
-            </div>
-
-            <div className="rounded-2xl bg-[#FAFAF8] p-4">
-              <p className="text-sm font-semibold">Valeurs pour 100 g</p>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <Field label="Calories">
-                  <input
-                    value={form.calories}
-                    onChange={(event) =>
-                      updateFormField("calories", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Ex : 226"
-                  />
-                </Field>
-
-                <Field label="Protéines">
-                  <input
-                    value={form.protein}
-                    onChange={(event) =>
-                      updateFormField("protein", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Ex : 10"
-                  />
-                </Field>
-
-                <Field label="Glucides">
-                  <input
-                    value={form.carbs}
-                    onChange={(event) =>
-                      updateFormField("carbs", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Ex : 39"
-                  />
-                </Field>
-
-                <Field label="Lipides">
-                  <input
-                    value={form.fat}
-                    onChange={(event) =>
-                      updateFormField("fat", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Ex : 1,9"
-                  />
-                </Field>
-
-                <Field label="Graisses saturées">
-                  <input
-                    value={form.saturatedFat}
-                    onChange={(event) =>
-                      updateFormField("saturatedFat", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Optionnel"
-                  />
-                </Field>
-
-                <Field label="Fibres">
-                  <input
-                    value={form.fiber}
-                    onChange={(event) =>
-                      updateFormField("fiber", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Optionnel"
-                  />
-                </Field>
-
-                <Field label="Sucres">
-                  <input
-                    value={form.sugar}
-                    onChange={(event) =>
-                      updateFormField("sugar", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Optionnel"
-                  />
-                </Field>
-
-                <Field label="Sel">
-                  <input
-                    value={form.salt}
-                    onChange={(event) =>
-                      updateFormField("salt", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Optionnel"
-                  />
-                </Field>
-              </div>
-            </div>
-
-            <button className="w-full rounded-2xl bg-[#10121A] px-5 py-3 text-sm font-medium text-white">
-              {editingFood
-                ? "Enregistrer les modifications"
-                : "Ajouter l’aliment"}
-            </button>
-          </div>
-        </form>
-
-        <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-            <div>
-              <h2 className="text-xl font-semibold">Mes aliments</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                {filteredFoods.length} résultat(s) affiché(s). Les aliments
-                simples sont priorisés.
-              </p>
-            </div>
-
+      <div className="mx-auto max-w-6xl">
+        <PageHeader
+          eyebrow="Base alimentaire"
+          title="Aliments"
+          description="Recherche, ajoute, corrige et organise les aliments. La base simplifiée privilégie les essentiels, favoris et produits ajoutés pour éviter de noyer l’expérience."
+          action={
             <div className="flex flex-wrap gap-2">
-              <button
+              <SoftButton
                 onClick={() => setShowOnlyFavorites((current) => !current)}
-                className={`rounded-full px-4 py-2 text-sm font-medium ${
-                  showOnlyFavorites
-                    ? "bg-[#10121A] text-white"
-                    : "border border-black/10 text-gray-600 hover:bg-black/5"
-                }`}
               >
-                Favoris
-              </button>
+                {showOnlyFavorites ? "Tous les aliments" : "Favoris"}
+              </SoftButton>
 
-              <button
+              <GhostButton
                 onClick={() => setIncludeFullDatabase((current) => !current)}
-                className={`rounded-full px-4 py-2 text-sm font-medium ${
-                  includeFullDatabase
-                    ? "bg-[#E85A0C] text-white"
-                    : "border border-black/10 text-gray-600 hover:bg-black/5"
-                }`}
               >
                 {includeFullDatabase
                   ? "Base complète active"
-                  : "Inclure Ciqual complet"}
-              </button>
+                  : "Inclure Ciqual"}
+              </GhostButton>
             </div>
+          }
+        />
+
+        <section className="mb-5 grid gap-4 md:grid-cols-4">
+          <StatCard label="Total aliments" value={`${foods.length}`} />
+          <StatCard label="Essentiels" value={`${essentialFoodsCount}`} />
+          <StatCard label="Complets" value={`${completeFoodsCount}`} />
+          <StatCard label="Favoris" value={`${favoriteFoodsCount}`} />
+        </section>
+
+        {incompleteFoodsCount > 0 && (
+          <div className="mb-5 rounded-[30px] bg-orange-50 p-4 text-sm font-bold text-orange-900 ring-1 ring-orange-100">
+            {incompleteFoodsCount} aliment(s) ont des valeurs incomplètes. Ils
+            restent utilisables, mais certains totaux peuvent être partiels.
           </div>
+        )}
 
-          <div className="mt-5 grid gap-3 md:grid-cols-[1fr_0.7fr_0.6fr]">
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="input"
-              placeholder="Rechercher : œuf, poulet, riz, banane..."
-            />
+        <section className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
+          <PremiumCard tint="white">
+            <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+              <SectionTitle
+                title={editingFood ? "Modifier l’aliment" : "Ajouter un aliment"}
+                text={
+                  editingFood
+                    ? "Les modifications se répercutent automatiquement dans les repas et repas types qui utilisent cet aliment."
+                    : "Ajoute une référence manuelle avec les valeurs pour 100 g."
+                }
+              />
 
-            <select
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-              className="input"
-            >
-              <option>Toutes</option>
-              {categories.map((category) => (
-                <option key={category}>{category}</option>
-              ))}
-            </select>
+              {editingFood && (
+                <GhostButton onClick={resetForm}>Annuler</GhostButton>
+              )}
+            </div>
 
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="input"
-            >
-              <option>Tous</option>
-              <option>Complets</option>
-              <option>À compléter</option>
-            </select>
-          </div>
+            <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Nom de l’aliment">
+                  <input
+                    value={form.name}
+                    onChange={(event) =>
+                      updateFormField("name", event.target.value)
+                    }
+                    className="input"
+                    placeholder="Ex : Riz basmati cuit"
+                  />
+                </Field>
 
-          <div className="mt-5 space-y-3">
-            {filteredFoods.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-black/10 bg-[#FAFAF8] p-8 text-center text-sm text-gray-500">
-                Aucun aliment ne correspond à cette recherche.
-              </div>
-            ) : (
-              filteredFoods.map((food) => {
-                const complete = isFoodComplete(food);
-
-                return (
-                  <div
-                    key={food.id}
-                    className="rounded-2xl border border-black/5 bg-[#FAFAF8] p-4"
+                <Field label="Catégorie">
+                  <select
+                    value={form.category}
+                    onChange={(event) =>
+                      updateFormField("category", event.target.value)
+                    }
+                    className="input"
                   >
-                    <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-medium">{food.name}</h3>
+                    {categories.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </Field>
 
-                          <span
-                            className={`rounded-full px-2 py-1 text-xs ${
-                              complete
-                                ? "bg-green-100 text-green-800"
-                                : "bg-orange-100 text-orange-800"
-                            }`}
-                          >
-                            {complete ? "Complet" : "À compléter"}
-                          </span>
+                <Field label="Marque optionnelle">
+                  <input
+                    value={form.brand}
+                    onChange={(event) =>
+                      updateFormField("brand", event.target.value)
+                    }
+                    className="input"
+                    placeholder="Ex : La Boulangère"
+                  />
+                </Field>
 
-                          {food.isFavorite && (
-                            <span className="rounded-full bg-[#10121A] px-2 py-1 text-xs text-white">
-                              Favori
-                            </span>
-                          )}
+                <Field label="Nom de portion">
+                  <input
+                    value={form.servingName}
+                    onChange={(event) =>
+                      updateFormField("servingName", event.target.value)
+                    }
+                    className="input"
+                    placeholder="Ex : 1 tranche, 1 portion"
+                  />
+                </Field>
 
-                          {food.isEssential && (
-                            <span className="rounded-full bg-[#E85A0C] px-2 py-1 text-xs text-white">
-                              Essentiel
-                            </span>
-                          )}
+                <Field label="Poids portion en g">
+                  <input
+                    value={form.servingSizeG}
+                    onChange={(event) =>
+                      updateFormField("servingSizeG", event.target.value)
+                    }
+                    className="input"
+                    placeholder="Ex : 38"
+                  />
+                </Field>
+              </div>
 
-                          <span className="rounded-full bg-white px-2 py-1 text-xs text-gray-600 ring-1 ring-black/5">
-                            {getSourceLabel(food.source)}
-                          </span>
-                        </div>
+              <div className="ui-card-soft p-5">
+                <p className="text-sm font-black text-[#171717]">
+                  Valeurs pour 100 g
+                </p>
+                <p className="mt-1 text-sm leading-6 text-[#7A746E]">
+                  Les calories, protéines, glucides et lipides permettent de
+                  calculer correctement les repas.
+                </p>
 
-                        <p className="mt-1 text-sm text-gray-500">
-                          {food.brand ? `${food.brand} · ` : ""}
-                          {food.category}
-                        </p>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <Field label="Calories">
+                    <input
+                      value={form.calories}
+                      onChange={(event) =>
+                        updateFormField("calories", event.target.value)
+                      }
+                      className="input"
+                      placeholder="Ex : 226"
+                    />
+                  </Field>
 
-                        {food.officialName && food.officialName !== food.name && (
-                          <p className="mt-1 text-xs text-gray-400">
-                            Nom officiel : {food.officialName}
-                          </p>
-                        )}
+                  <Field label="Protéines">
+                    <input
+                      value={form.protein}
+                      onChange={(event) =>
+                        updateFormField("protein", event.target.value)
+                      }
+                      className="input"
+                      placeholder="Ex : 10"
+                    />
+                  </Field>
 
-                        {food.barcode && (
-                          <p className="mt-1 text-xs text-gray-400">
-                            Code-barres : {food.barcode}
-                          </p>
-                        )}
+                  <Field label="Glucides">
+                    <input
+                      value={form.carbs}
+                      onChange={(event) =>
+                        updateFormField("carbs", event.target.value)
+                      }
+                      className="input"
+                      placeholder="Ex : 39"
+                    />
+                  </Field>
 
-                        {food.servingName && food.servingSizeG && (
-                          <p className="mt-1 text-sm text-gray-500">
-                            Portion : {food.servingName} · {food.servingSizeG} g
-                          </p>
-                        )}
+                  <Field label="Lipides">
+                    <input
+                      value={form.fat}
+                      onChange={(event) =>
+                        updateFormField("fat", event.target.value)
+                      }
+                      className="input"
+                      placeholder="Ex : 1,9"
+                    />
+                  </Field>
 
-                        <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-                          <MacroMini
-                            label="kcal"
-                            value={food.caloriesPer100g}
-                            suffix=""
-                          />
-                          <MacroMini
-                            label="Prot."
-                            value={food.proteinPer100g}
-                            suffix="g"
-                          />
-                          <MacroMini
-                            label="Gluc."
-                            value={food.carbsPer100g}
-                            suffix="g"
-                          />
-                          <MacroMini
-                            label="Lip."
-                            value={food.fatPer100g}
-                            suffix="g"
-                          />
-                        </div>
+                  <Field label="Graisses saturées">
+                    <input
+                      value={form.saturatedFat}
+                      onChange={(event) =>
+                        updateFormField("saturatedFat", event.target.value)
+                      }
+                      className="input"
+                      placeholder="Optionnel"
+                    />
+                  </Field>
 
-                        {food.externalUrl && (
-                          <a
-                            href={food.externalUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-3 inline-block text-xs font-medium text-[#E85A0C]"
-                          >
-                            Voir la source
-                          </a>
-                        )}
-                      </div>
+                  <Field label="Fibres">
+                    <input
+                      value={form.fiber}
+                      onChange={(event) =>
+                        updateFormField("fiber", event.target.value)
+                      }
+                      className="input"
+                      placeholder="Optionnel"
+                    />
+                  </Field>
 
-                      <div className="flex shrink-0 flex-wrap gap-2 md:justify-end">
-                        <button
-                          onClick={() => toggleFavorite(food)}
-                          className="rounded-full border border-black/10 px-3 py-1.5 text-xs text-gray-600 hover:bg-black/5"
-                        >
-                          {food.isFavorite ? "Retirer favori" : "Favori"}
-                        </button>
+                  <Field label="Sucres">
+                    <input
+                      value={form.sugar}
+                      onChange={(event) =>
+                        updateFormField("sugar", event.target.value)
+                      }
+                      className="input"
+                      placeholder="Optionnel"
+                    />
+                  </Field>
 
-                        <button
-                          onClick={() => startEditing(food)}
-                          className="rounded-full border border-black/10 px-3 py-1.5 text-xs text-gray-600 hover:bg-black/5"
-                        >
-                          Modifier
-                        </button>
+                  <Field label="Sel">
+                    <input
+                      value={form.salt}
+                      onChange={(event) =>
+                        updateFormField("salt", event.target.value)
+                      }
+                      className="input"
+                      placeholder="Optionnel"
+                    />
+                  </Field>
+                </div>
+              </div>
 
-                        <button
-                          onClick={() => confirmDelete(food)}
-                          className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700"
-                        >
-                          Supprimer
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+              <button
+                type="submit"
+                className="ui-button-primary w-full px-5 py-4 text-sm"
+              >
+                {editingFood
+                  ? "Enregistrer les modifications"
+                  : "Ajouter l’aliment"}
+              </button>
+            </form>
+          </PremiumCard>
+
+          <div className="space-y-5">
+            <PremiumCard tint="white">
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                <SectionTitle
+                  title="Mes aliments"
+                  text={`${filteredFoods.length} résultat(s) affiché(s). Les aliments simples et vérifiés remontent en premier.`}
+                />
+              </div>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                <Field label="Rechercher">
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    className="input"
+                    placeholder="Ex : œuf, poulet, riz, banane..."
+                  />
+                </Field>
+
+                <GhostButton
+                  onClick={() => {
+                    setQuery("");
+                    setCategoryFilter("Toutes");
+                    setStatusFilter("Tous");
+                    setShowOnlyFavorites(false);
+                  }}
+                >
+                  Réinitialiser
+                </GhostButton>
+              </div>
+
+              <div className="mt-6">
+                <p className="mb-3 text-sm font-black text-[#171717]">
+                  Statut
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {statusFilters.map((status) => (
+                    <FilterPill
+                      key={status}
+                      active={statusFilter === status}
+                      onClick={() => setStatusFilter(status)}
+                    >
+                      {status}
+                    </FilterPill>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <p className="mb-3 text-sm font-black text-[#171717]">
+                  Catégorie
+                </p>
+                <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto pr-1">
+                  {["Toutes", ...categories].map((category) => (
+                    <FilterPill
+                      key={category}
+                      active={categoryFilter === category}
+                      onClick={() => setCategoryFilter(category)}
+                    >
+                      {category}
+                    </FilterPill>
+                  ))}
+                </div>
+              </div>
+            </PremiumCard>
+
+            <PremiumCard tint="white">
+              {filteredFoods.length === 0 ? (
+                <EmptyState
+                  title="Aucun aliment trouvé"
+                  text="Essaie de modifier les filtres, d’inclure la base Ciqual complète ou d’ajouter un aliment manuel."
+                  action={
+                    <SoftButton
+                      onClick={() => {
+                        setIncludeFullDatabase(true);
+                        setShowOnlyFavorites(false);
+                      }}
+                    >
+                      Inclure Ciqual complet
+                    </SoftButton>
+                  }
+                />
+              ) : (
+                <div className="grid gap-4">
+                  {filteredFoods.map((food) => (
+                    <FoodCard
+                      key={food.id}
+                      food={food}
+                      onEdit={() => startEditing(food)}
+                      onToggleFavorite={() => toggleFavorite(food)}
+                      onDelete={() => confirmDelete(food)}
+                    />
+                  ))}
+                </div>
+              )}
+            </PremiumCard>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </AppShell>
   );
 }
@@ -696,7 +623,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-gray-700">
+      <span className="mb-2 block text-sm font-black text-[#171717]">
         {label}
       </span>
       {children}
@@ -704,12 +631,116 @@ function Field({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function FilterPill({
+  children,
+  active,
+  onClick,
+}: {
+  children: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
-    <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-2 text-3xl font-semibold">{value}</p>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-4 py-2 text-sm font-black transition ${
+        active
+          ? "ui-button-primary text-white"
+          : "bg-[#FFFAF5] text-[#7A746E] ring-1 ring-black/[0.055] hover:bg-[#FFE1DD] hover:text-[#B92D35]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function FoodCard({
+  food,
+  onEdit,
+  onToggleFavorite,
+  onDelete,
+}: {
+  food: Food;
+  onEdit: () => void;
+  onToggleFavorite: () => void;
+  onDelete: () => void;
+}) {
+  const complete = isFoodComplete(food);
+
+  return (
+    <article className="ui-card-soft ui-float p-5">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            {food.isEssential && <Pill tone="red">Essentiel</Pill>}
+            {food.isFavorite && <Pill tone="dark">Favori</Pill>}
+            {complete ? (
+              <Pill tone="green">Complet</Pill>
+            ) : (
+              <Pill tone="red">À compléter</Pill>
+            )}
+            <Pill tone="cream">{getSourceLabel(food.source)}</Pill>
+          </div>
+
+          <h3 className="mt-4 text-2xl font-black tracking-[-0.055em] text-[#171717]">
+            {food.name}
+          </h3>
+
+          <p className="mt-2 text-sm font-bold text-[#7A746E]">
+            {food.brand ? `${food.brand} · ` : ""}
+            {food.category}
+          </p>
+
+          {food.officialName && food.officialName !== food.name && (
+            <p className="mt-2 text-xs leading-5 text-[#9B948E]">
+              Nom officiel : {food.officialName}
+            </p>
+          )}
+
+          {food.servingName && food.servingSizeG && (
+            <p className="mt-2 text-sm text-[#7A746E]">
+              Portion : {food.servingName} · {food.servingSizeG} g
+            </p>
+          )}
+        </div>
+
+        <div className="shrink-0 rounded-full bg-[#FFE1DD] px-4 py-2 text-sm font-black text-[#B92D35]">
+          {food.caloriesPer100g ?? "—"} kcal / 100 g
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        <MacroMini label="Prot." value={food.proteinPer100g} suffix="g" />
+        <MacroMini label="Gluc." value={food.carbsPer100g} suffix="g" />
+        <MacroMini label="Lip." value={food.fatPer100g} suffix="g" />
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <GhostButton onClick={onEdit} className="w-full">
+          Modifier
+        </GhostButton>
+
+        <SoftButton onClick={onToggleFavorite} className="w-full">
+          {food.isFavorite ? "Retirer favori" : "Favori"}
+        </SoftButton>
+
+        <DangerButton onClick={onDelete} className="w-full">
+          Supprimer
+        </DangerButton>
+      </div>
+
+      {food.externalUrl && (
+        <a
+          href={food.externalUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-flex text-sm font-black text-[#E94B4B]"
+        >
+          Voir la source →
+        </a>
+      )}
+    </article>
   );
 }
 
@@ -723,11 +754,10 @@ function MacroMini({
   suffix: string;
 }) {
   return (
-    <div className="rounded-xl bg-white px-3 py-2">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="font-medium">
-        {value ?? "—"}
-        {value !== null && value !== undefined ? suffix : ""}
+    <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/[0.055]">
+      <p className="text-xs font-bold text-[#7A746E]">{label}</p>
+      <p className="mt-1 font-black text-[#171717]">
+        {value ?? "—"} {value !== null && value !== undefined ? suffix : ""}
       </p>
     </div>
   );
