@@ -8,6 +8,7 @@ const desktopNavigation = [
   { label: "Journal", href: "/journal" },
   { label: "Ajouter un repas", href: "/add" },
   { label: "Aliments", href: "/foods" },
+  { label: "Audit aliments", href: "/audit-foods" },
   { label: "Importer", href: "/import" },
   { label: "Objectifs", href: "/goals" },
   { label: "Repas types", href: "/recipes" },

@@ -48,6 +48,8 @@ export type Food = {
   isFavorite?: boolean;
   isEssential?: boolean;
   officialName?: string;
+  reviewed?: boolean;
+  reviewNotes?: string;
 
   caloriesPer100g: number | null;
   proteinPer100g: number | null;

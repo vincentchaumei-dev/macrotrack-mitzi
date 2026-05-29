@@ -13,7 +13,7 @@ import {
   UserProfile,
   WeightLog,
 } from "@/types/nutrition";
-import { createId, todayLocalDate } from "@/lib/nutrition";
+import { buildMealItem, createId, todayLocalDate } from "@/lib/nutrition";
 
 const STORAGE_KEY = "macrotrack-personal-v1";
 
@@ -53,8 +53,20 @@ function mergeSeedFoods(existingFoods: Food[]) {
   });
 
   existingFoods.forEach((food) => {
+    const seedFood = merged.get(food.id);
+  
+    if (seedFood?.isEssential) {
+      merged.set(food.id, {
+        ...food,
+        ...seedFood,
+        isFavorite: food.isFavorite ?? seedFood.isFavorite,
+      });
+  
+      return;
+    }
+  
     merged.set(food.id, {
-      ...merged.get(food.id),
+      ...seedFood,
       ...food,
     });
   });
@@ -158,11 +170,12 @@ export function useNutritionStore() {
   );
 
   const mealTemplates = useMemo(
-    () => [...data.mealTemplates].sort((a, b) => {
-      if (a.isDefault && !b.isDefault) return -1;
-      if (!a.isDefault && b.isDefault) return 1;
-      return a.name.localeCompare(b.name);
-    }),
+    () =>
+      [...data.mealTemplates].sort((a, b) => {
+        if (a.isDefault && !b.isDefault) return -1;
+        if (!a.isDefault && b.isDefault) return 1;
+        return a.name.localeCompare(b.name);
+      }),
     [data.mealTemplates]
   );
 
@@ -216,18 +229,76 @@ export function useNutritionStore() {
     foodId: string,
     input: Partial<Omit<Food, "id" | "createdAt">>
   ) {
-    setData((current) => ({
-      ...current,
-      foods: current.foods.map((food) =>
+    const updatedAt = new Date().toISOString();
+
+    setData((current) => {
+      const updatedFoods = current.foods.map((food) =>
         food.id === foodId
           ? {
               ...food,
               ...input,
-              updatedAt: new Date().toISOString(),
+              updatedAt,
             }
           : food
-      ),
-    }));
+      );
+
+      const updatedFood = updatedFoods.find((food) => food.id === foodId);
+
+      if (!updatedFood) {
+        return {
+          ...current,
+          foods: updatedFoods,
+        };
+      }
+
+      const foodForRefresh: Food = updatedFood;
+
+      function refreshItem(item: MealItem): MealItem {
+        if (item.foodId !== foodId) {
+          return item;
+        }
+
+        const refreshedItem = buildMealItem(foodForRefresh, item.quantityG);
+
+        return {
+          ...refreshedItem,
+          id: item.id,
+        };
+      }
+
+      function hasFoodInItems(items: MealItem[]) {
+        return items.some((item) => item.foodId === foodId);
+      }
+
+      return {
+        ...current,
+        foods: updatedFoods,
+
+        meals: current.meals.map((meal) => {
+          if (!hasFoodInItems(meal.items)) {
+            return meal;
+          }
+
+          return {
+            ...meal,
+            items: meal.items.map(refreshItem),
+            updatedAt,
+          };
+        }),
+
+        mealTemplates: current.mealTemplates.map((template) => {
+          if (!hasFoodInItems(template.items)) {
+            return template;
+          }
+
+          return {
+            ...template,
+            items: template.items.map(refreshItem),
+            updatedAt,
+          };
+        }),
+      };
+    });
   }
 
   function addMeal(input: Omit<Meal, "id" | "createdAt" | "updatedAt">) {

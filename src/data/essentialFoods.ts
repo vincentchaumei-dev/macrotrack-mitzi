@@ -31,72 +31,261 @@ function includesAny(text: string, words: string[]) {
   return words.some((word) => text.includes(normalizeSearchText(word)));
 }
 
-function scoreFood(food: Food, definition: EssentialDefinition) {
-  const foodName = normalizeSearchText(food.name);
-  const category = normalizeSearchText(food.category);
-  const fullText = `${foodName} ${category}`;
-
-  const matchesQuery = definition.queries.some((query) =>
-    includesAll(fullText, query)
-  );
-
-  if (!matchesQuery) return -999999;
-
-  let score = 0;
-
-  if (food.category === definition.category) score += 200;
-
-  if (definition.preferred && includesAny(fullText, definition.preferred)) {
-    score += 250;
-  }
-
-  if (definition.avoid && includesAny(fullText, definition.avoid)) {
-    score -= 900;
-  }
-
-  const wordCount = food.name.split(",").length + food.name.split(" ").length;
-
-  if (wordCount <= 6) score += 150;
-  if (wordCount <= 10) score += 80;
-  if (wordCount > 18) score -= 120;
-
-  if (food.dataQualityStatus === "complete") score += 100;
-
-  return score;
-}
-
-function createEssentialFood(definition: EssentialDefinition): Food | null {
-  const bestMatch = ciqualFoods
-    .map((food) => ({
-      food,
-      score: scoreFood(food, definition),
-    }))
-    .filter((item) => item.score > -999999)
-    .sort((a, b) => b.score - a.score)[0]?.food;
-
-  if (!bestMatch) {
+function getExpectedCaloriesRange(definition: EssentialDefinition): [number, number] | null {
+    const name = normalizeSearchText(definition.name);
+    const category = definition.category;
+  
+    if (name.includes("huile")) return [850, 950];
+  
+    if (
+      name.includes("amande") ||
+      name.includes("noix") ||
+      name.includes("cacahuete") ||
+      name.includes("cacahuète") ||
+      name.includes("beurre de cacahuete") ||
+      name.includes("beurre de cacahuète")
+    ) {
+      return [450, 750];
+    }
+  
+    if (name.includes("beurre") && !name.includes("cacahuete")) {
+      return [700, 780];
+    }
+  
+    if (name.includes("avocat")) return [120, 250];
+  
+    if (category === "Fruits") return [20, 140];
+  
+    if (category === "Légumes") return [5, 120];
+  
+    if (category === "Féculents & céréales") {
+      if (name.includes("flocons") || name.includes("avoine")) {
+        return [330, 420];
+      }
+  
+      if (name.includes("pain")) {
+        return [200, 310];
+      }
+  
+      if (
+        name.includes("cuit") ||
+        name.includes("cuite") ||
+        name.includes("cuites") ||
+        name.includes("cuits")
+      ) {
+        return [60, 220];
+      }
+  
+      return [60, 420];
+    }
+  
+    if (category === "Légumineuses") {
+      if (
+        name.includes("cuit") ||
+        name.includes("cuite") ||
+        name.includes("cuites") ||
+        name.includes("cuits")
+      ) {
+        return [60, 200];
+      }
+  
+      return [60, 380];
+    }
+  
+    if (category === "Viandes") {
+      if (name.includes("steak") && name.includes("5")) return [100, 180];
+      if (name.includes("jambon")) return [80, 170];
+      if (name.includes("poulet") || name.includes("dinde")) return [90, 240];
+  
+      return [80, 350];
+    }
+  
+    if (category === "Poissons") {
+      if (name.includes("saumon")) return [130, 280];
+      if (name.includes("thon")) return [80, 180];
+      if (name.includes("cabillaud")) return [60, 140];
+      if (name.includes("crevette")) return [60, 140];
+  
+      return [50, 350];
+    }
+  
+    if (category === "Œufs") return [120, 220];
+  
+    if (category === "Produits laitiers") {
+      if (name.includes("lait")) return [30, 80];
+      if (name.includes("fromage blanc")) return [40, 120];
+      if (name.includes("yaourt")) return [40, 130];
+  
+      return [30, 180];
+    }
+  
+    if (category === "Fromages") return [180, 420];
+  
     return null;
   }
+  
+  function isInExpectedCaloriesRange(food: Food, definition: EssentialDefinition) {
+    const range = getExpectedCaloriesRange(definition);
+  
+    if (!range) return true;
+    if (food.caloriesPer100g === null || food.caloriesPer100g === undefined) {
+      return false;
+    }
+  
+    const [min, max] = range;
+  
+    return food.caloriesPer100g >= min && food.caloriesPer100g <= max;
+  }
+  
+  function getCookingExpectation(definition: EssentialDefinition) {
+    const name = normalizeSearchText(definition.name);
+  
+    if (
+      name.includes("cuit") ||
+      name.includes("cuite") ||
+      name.includes("cuits") ||
+      name.includes("cuites")
+    ) {
+      return "cooked";
+    }
+  
+    return null;
+  }
+  
+  function hasCookedKeyword(text: string) {
+    return (
+      text.includes("cuit") ||
+      text.includes("cuite") ||
+      text.includes("cuits") ||
+      text.includes("cuites") ||
+      text.includes("bouilli") ||
+      text.includes("bouillie") ||
+      text.includes("vapeur") ||
+      text.includes("poele") ||
+      text.includes("poêlé") ||
+      text.includes("roti") ||
+      text.includes("rôti")
+    );
+  }
 
-  const createdAt = "2026-01-01T00:00:00.000Z";
+  function scoreFood(food: Food, definition: EssentialDefinition) {
+    const foodName = normalizeSearchText(food.name);
+    const category = normalizeSearchText(food.category);
+    const fullText = `${foodName} ${category}`;
+  
+    const matchesQuery = definition.queries.some((query) =>
+      includesAll(fullText, query)
+    );
+  
+    if (!matchesQuery) return -999999;
+  
+    let score = 0;
+  
+    const caloriesInExpectedRange = isInExpectedCaloriesRange(food, definition);
+    const cookingExpectation = getCookingExpectation(definition);
+  
+    if (food.category === definition.category) score += 300;
+  
+    if (definition.preferred && includesAny(fullText, definition.preferred)) {
+      score += 350;
+    }
+  
+    if (definition.avoid && includesAny(fullText, definition.avoid)) {
+      score -= 1500;
+    }
+  
+    if (caloriesInExpectedRange) {
+      score += 2000;
+    } else {
+      score -= 5000;
+    }
+  
+    if (cookingExpectation === "cooked") {
+      if (hasCookedKeyword(fullText)) {
+        score += 1200;
+      } else {
+        score -= 2500;
+      }
+    }
+  
+    if (food.dataQualityStatus === "complete") score += 300;
+  
+    const commaCount = food.name.split(",").length;
+    const wordCount = food.name.split(" ").length;
+  
+    if (commaCount <= 2) score += 200;
+    if (wordCount <= 8) score += 150;
+    if (wordCount > 18) score -= 200;
+  
+    const badProcessedWords = [
+      "burger",
+      "sandwich",
+      "pizza",
+      "gateau",
+      "gâteau",
+      "biscuit",
+      "dessert",
+      "sauce",
+      "restauration rapide",
+      "préemballé",
+      "preemballe",
+      "plat composé",
+      "plat compose",
+      "pané",
+      "pane",
+      "frit",
+      "nugget",
+    ];
+  
+    if (includesAny(fullText, badProcessedWords)) {
+      score -= 2500;
+    }
+  
+    return score;
+  }
 
-  return {
-    ...bestMatch,
-    id: `essential-${definition.id}`,
-    name: definition.name,
-    officialName: bestMatch.name,
-    category: definition.category,
-    servingName: definition.servingName ?? "100 g",
-    servingSizeG: definition.servingSizeG ?? 100,
-    isFavorite: definition.isFavorite ?? false,
-    isEssential: true,
-    source: "ciqual",
-    verified: true,
-    dataQualityStatus: bestMatch.dataQualityStatus ?? "complete",
-    createdAt,
-    updatedAt: createdAt,
-  };
-}
+  function createEssentialFood(definition: EssentialDefinition): Food | null {
+    const bestMatch = ciqualFoods
+      .map((food) => ({
+        food,
+        score: scoreFood(food, definition),
+      }))
+      .filter((item) => item.score > -999999)
+      .sort((a, b) => b.score - a.score)[0]?.food;
+  
+    if (!bestMatch) {
+      return null;
+    }
+  
+    const createdAt = "2026-01-01T00:00:00.000Z";
+  
+    const autoReviewed =
+      bestMatch.dataQualityStatus === "complete" &&
+      isInExpectedCaloriesRange(bestMatch, definition);
+  
+    return {
+      ...bestMatch,
+      id: `essential-${definition.id}`,
+      name: definition.name,
+      officialName: bestMatch.name,
+      category: definition.category,
+      servingName: definition.servingName ?? "100 g",
+      servingSizeG: definition.servingSizeG ?? 100,
+      isFavorite: definition.isFavorite ?? false,
+      isEssential: true,
+      source: "ciqual",
+      verified: true,
+      reviewed: autoReviewed,
+      reviewNotes: autoReviewed
+        ? "Auto-audit : correspondance Ciqual cohérente avec les bornes attendues."
+        : "Auto-audit : valeur à vérifier, correspondance Ciqual potentiellement incertaine.",
+      dataQualityStatus: autoReviewed
+        ? "complete"
+        : bestMatch.dataQualityStatus ?? "needs_review",
+      createdAt,
+      updatedAt: createdAt,
+    };
+  }
 
 const essentialDefinitions: EssentialDefinition[] = [
   // Fruits
