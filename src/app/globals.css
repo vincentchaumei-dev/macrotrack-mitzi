@@ -1763,3 +1763,33 @@ a[aria-disabled="true"] {
     scroll-behavior: auto !important;
   }
 }
+
+.SettingsNeutralButton,
+.SettingsSoftButton,
+.SettingsDangerButton {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.SettingsNeutralButton {
+  background: white;
+  color: var(--mt-ink);
+  border: 1px solid var(--mt-line);
+  box-shadow: var(--mt-shadow-sm);
+}
+
+.SettingsSoftButton {
+  background: var(--mt-rouge-wash);
+  color: var(--mt-rouge-deep);
+  border: 1px solid var(--mt-rouge-soft);
+}
+
+.SettingsDangerButton {
+  background: white;
+  color: var(--mt-rouge-deep);
+  border: 1px solid var(--mt-rouge-soft);
+}
