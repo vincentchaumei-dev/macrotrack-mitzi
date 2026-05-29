@@ -1793,3 +1793,181 @@ a[aria-disabled="true"] {
   color: var(--mt-rouge-deep);
   border: 1px solid var(--mt-rouge-soft);
 }
+
+.OnboardingHero {
+  position: relative;
+  overflow: hidden;
+  min-height: 390px;
+  padding: 22px 22px 54px;
+  background: linear-gradient(
+    168deg,
+    var(--mt-rouge-lit) 0%,
+    var(--mt-rouge) 42%,
+    #8e1228 78%,
+    #6e0c1e 100%
+  );
+  color: white;
+}
+
+.OnboardingHero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(500px 280px at 82% 6%, rgba(255, 255, 255, 0.22), transparent 58%),
+    radial-gradient(420px 420px at 6% 96%, rgba(255, 255, 255, 0.1), transparent 60%);
+}
+
+.OnboardingHero::after {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -90px;
+  width: 280px;
+  height: 280px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.04);
+}
+
+.OnboardingSheet {
+  position: relative;
+  z-index: 3;
+  margin-top: -28px;
+  min-height: calc(100svh - 360px);
+  border-radius: 32px 32px 0 0;
+  background: var(--mt-bg);
+  padding: 22px 20px calc(34px + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 30px -16px rgba(23, 19, 24, 0.16);
+}
+
+.OnboardingTitle {
+  margin-top: 0.35rem;
+  font-family: var(--mt-display);
+  font-size: 34px;
+  font-weight: 650;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  color: var(--mt-ink);
+}
+
+.OnboardingText {
+  margin-top: 0.9rem;
+  max-width: 330px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--mt-ink-2);
+}
+
+.OnboardingInput {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 18px;
+  border: 1px solid var(--mt-line);
+  background: var(--mt-card-soft);
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--mt-ink);
+  outline: none;
+}
+
+.OnboardingInput:focus {
+  border-color: rgba(192, 30, 60, 0.42);
+  background: white;
+  box-shadow:
+    0 0 0 4px rgba(192, 30, 60, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.OnboardingInput::placeholder {
+  color: var(--mt-ink-3);
+  font-weight: 700;
+}
+
+.OnboardingBackButton {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 18px;
+  background: white;
+  color: var(--mt-ink);
+  border: 1px solid var(--mt-line);
+  box-shadow: var(--mt-shadow-sm);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+@media (max-width: 390px) {
+  .OnboardingHero {
+    min-height: 370px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .OnboardingSheet {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .OnboardingTitle {
+    font-size: 31px;
+  }
+}
+
+.ImportInput {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 18px;
+  border: 1px solid var(--mt-line);
+  background: var(--mt-card-soft);
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--mt-ink);
+  outline: none;
+}
+
+.ImportInput:focus {
+  border-color: rgba(192, 30, 60, 0.42);
+  background: white;
+  box-shadow:
+    0 0 0 4px rgba(192, 30, 60, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.ImportInput::placeholder {
+  color: var(--mt-ink-3);
+  font-weight: 700;
+}
+
+.ImportPrimaryButton,
+.ImportSecondaryButton,
+.ImportSourceButton {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 18px;
+  padding: 13px 15px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ImportPrimaryButton,
+.ImportSecondaryButton {
+  background: linear-gradient(
+    160deg,
+    var(--mt-rouge-lit),
+    var(--mt-rouge-deep)
+  );
+  color: white;
+  box-shadow: var(--mt-shadow-red);
+}
+
+.ImportSourceButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  color: var(--mt-ink);
+  border: 1px solid var(--mt-line);
+  box-shadow: var(--mt-shadow-sm);
+}
