@@ -7,6 +7,7 @@ import {
   compareFoodsForSearch,
   foodMatchesSearch,
   isFoodComplete,
+  shouldShowFoodInSimpleMode,
 } from "@/lib/nutrition";
 import { Food, FoodSource } from "@/types/nutrition";
 
@@ -72,6 +73,28 @@ function parseNumber(value: string) {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+function getDataQualityStatus(form: FoodFormState) {
+  const calories = parseNumber(form.calories);
+  const protein = parseNumber(form.protein);
+  const carbs = parseNumber(form.carbs);
+  const fat = parseNumber(form.fat);
+
+  if (
+    calories !== null &&
+    protein !== null &&
+    carbs !== null &&
+    fat !== null
+  ) {
+    return "complete" as const;
+  }
+
+  if (calories !== null || protein !== null || carbs !== null || fat !== null) {
+    return "partial" as const;
+  }
+
+  return "missing" as const;
+}
+
 function foodToForm(food: Food): FoodFormState {
   return {
     name: food.name,
@@ -107,7 +130,7 @@ function formToFoodInput(form: FoodFormState) {
     saltPer100g: parseNumber(form.salt),
     source: "manual" as FoodSource,
     verified: true,
-    dataQualityStatus: "complete" as const,
+    dataQualityStatus: getDataQualityStatus(form),
   };
 }
 
@@ -128,6 +151,7 @@ export default function FoodsPage() {
   const [categoryFilter, setCategoryFilter] = useState("Toutes");
   const [statusFilter, setStatusFilter] = useState("Tous");
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [includeFullDatabase, setIncludeFullDatabase] = useState(false);
 
   const editingFood = foods.find((food) => food.id === editingFoodId) ?? null;
 
@@ -137,6 +161,9 @@ export default function FoodsPage() {
     return foods
       .filter((food) => {
         const complete = isFoodComplete(food);
+
+        const matchesSimpleMode =
+          includeFullDatabase || shouldShowFoodInSimpleMode(food, query);
 
         const matchesQuery =
           !hasQuery ||
@@ -158,6 +185,7 @@ export default function FoodsPage() {
         const matchesFavorite = !showOnlyFavorites || food.isFavorite;
 
         return (
+          matchesSimpleMode &&
           matchesQuery &&
           matchesCategory &&
           matchesStatus &&
@@ -165,12 +193,20 @@ export default function FoodsPage() {
         );
       })
       .sort((a, b) => compareFoodsForSearch(a, b, query))
-      .slice(0, hasQuery || showOnlyFavorites ? 80 : 30);
-  }, [foods, query, categoryFilter, statusFilter, showOnlyFavorites]);
+      .slice(0, hasQuery || showOnlyFavorites || includeFullDatabase ? 80 : 40);
+  }, [
+    foods,
+    query,
+    categoryFilter,
+    statusFilter,
+    showOnlyFavorites,
+    includeFullDatabase,
+  ]);
 
   const completeFoodsCount = foods.filter(isFoodComplete).length;
   const incompleteFoodsCount = foods.length - completeFoodsCount;
   const favoriteFoodsCount = foods.filter((food) => food.isFavorite).length;
+  const essentialFoodsCount = foods.filter((food) => food.isEssential).length;
 
   function updateFormField(key: keyof FoodFormState, value: string) {
     setForm((current) => ({
@@ -197,6 +233,7 @@ export default function FoodsPage() {
       addFood({
         ...foodInput,
         isFavorite: false,
+        isEssential: false,
       });
     }
 
@@ -235,17 +272,25 @@ export default function FoodsPage() {
         <p className="text-sm font-medium text-[#E85A0C]">Base alimentaire</p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight">Aliments</h1>
         <p className="mt-2 max-w-3xl text-gray-500">
-          Recherche, ajoute et modifie les aliments. Les aliments simples et
-          bruts sont priorisés dans les résultats de recherche.
+          Recherche, ajoute et modifie les aliments. Par défaut, l’app privilégie
+          les aliments essentiels, favoris et produits ajoutés pour éviter de
+          noyer l’utilisateur dans toute la base Ciqual.
         </p>
       </div>
 
       <section className="mb-6 grid gap-4 md:grid-cols-4">
         <Stat label="Total aliments" value={`${foods.length}`} />
+        <Stat label="Essentiels" value={`${essentialFoodsCount}`} />
         <Stat label="Complets" value={`${completeFoodsCount}`} />
-        <Stat label="À compléter" value={`${incompleteFoodsCount}`} />
         <Stat label="Favoris" value={`${favoriteFoodsCount}`} />
       </section>
+
+      {incompleteFoodsCount > 0 && (
+        <div className="mb-6 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900">
+          {incompleteFoodsCount} aliment(s) ont des valeurs incomplètes. Ils
+          restent utilisables, mais les totaux peuvent être partiels.
+        </div>
+      )}
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.25fr]">
         <form
@@ -259,7 +304,7 @@ export default function FoodsPage() {
               </h2>
               <p className="mt-1 text-sm text-gray-500">
                 Renseigne les valeurs pour 100 g depuis une étiquette ou une
-                source fiable.
+                source fiable. Les champs vides restent inconnus.
               </p>
             </div>
 
@@ -342,7 +387,9 @@ export default function FoodsPage() {
                 <Field label="Calories">
                   <input
                     value={form.calories}
-                    onChange={(e) => updateFormField("calories", e.target.value)}
+                    onChange={(event) =>
+                      updateFormField("calories", event.target.value)
+                    }
                     className="input"
                     placeholder="Ex : 226"
                   />
@@ -351,7 +398,9 @@ export default function FoodsPage() {
                 <Field label="Protéines">
                   <input
                     value={form.protein}
-                    onChange={(e) => updateFormField("protein", e.target.value)}
+                    onChange={(event) =>
+                      updateFormField("protein", event.target.value)
+                    }
                     className="input"
                     placeholder="Ex : 10"
                   />
@@ -360,7 +409,9 @@ export default function FoodsPage() {
                 <Field label="Glucides">
                   <input
                     value={form.carbs}
-                    onChange={(e) => updateFormField("carbs", e.target.value)}
+                    onChange={(event) =>
+                      updateFormField("carbs", event.target.value)
+                    }
                     className="input"
                     placeholder="Ex : 39"
                   />
@@ -369,7 +420,9 @@ export default function FoodsPage() {
                 <Field label="Lipides">
                   <input
                     value={form.fat}
-                    onChange={(e) => updateFormField("fat", e.target.value)}
+                    onChange={(event) =>
+                      updateFormField("fat", event.target.value)
+                    }
                     className="input"
                     placeholder="Ex : 1,9"
                   />
@@ -378,8 +431,8 @@ export default function FoodsPage() {
                 <Field label="Graisses saturées">
                   <input
                     value={form.saturatedFat}
-                    onChange={(e) =>
-                      updateFormField("saturatedFat", e.target.value)
+                    onChange={(event) =>
+                      updateFormField("saturatedFat", event.target.value)
                     }
                     className="input"
                     placeholder="Optionnel"
@@ -389,7 +442,9 @@ export default function FoodsPage() {
                 <Field label="Fibres">
                   <input
                     value={form.fiber}
-                    onChange={(e) => updateFormField("fiber", e.target.value)}
+                    onChange={(event) =>
+                      updateFormField("fiber", event.target.value)
+                    }
                     className="input"
                     placeholder="Optionnel"
                   />
@@ -398,7 +453,9 @@ export default function FoodsPage() {
                 <Field label="Sucres">
                   <input
                     value={form.sugar}
-                    onChange={(e) => updateFormField("sugar", e.target.value)}
+                    onChange={(event) =>
+                      updateFormField("sugar", event.target.value)
+                    }
                     className="input"
                     placeholder="Optionnel"
                   />
@@ -407,7 +464,9 @@ export default function FoodsPage() {
                 <Field label="Sel">
                   <input
                     value={form.salt}
-                    onChange={(e) => updateFormField("salt", e.target.value)}
+                    onChange={(event) =>
+                      updateFormField("salt", event.target.value)
+                    }
                     className="input"
                     placeholder="Optionnel"
                   />
@@ -433,16 +492,31 @@ export default function FoodsPage() {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowOnlyFavorites((current) => !current)}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${
-                showOnlyFavorites
-                  ? "bg-[#10121A] text-white"
-                  : "border border-black/10 text-gray-600 hover:bg-black/5"
-              }`}
-            >
-              Favoris
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setShowOnlyFavorites((current) => !current)}
+                className={`rounded-full px-4 py-2 text-sm font-medium ${
+                  showOnlyFavorites
+                    ? "bg-[#10121A] text-white"
+                    : "border border-black/10 text-gray-600 hover:bg-black/5"
+                }`}
+              >
+                Favoris
+              </button>
+
+              <button
+                onClick={() => setIncludeFullDatabase((current) => !current)}
+                className={`rounded-full px-4 py-2 text-sm font-medium ${
+                  includeFullDatabase
+                    ? "bg-[#E85A0C] text-white"
+                    : "border border-black/10 text-gray-600 hover:bg-black/5"
+                }`}
+              >
+                {includeFullDatabase
+                  ? "Base complète active"
+                  : "Inclure Ciqual complet"}
+              </button>
+            </div>
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-[1fr_0.7fr_0.6fr]">
@@ -510,11 +584,11 @@ export default function FoodsPage() {
                             </span>
                           )}
 
-{food.isEssential && (
-  <span className="rounded-full bg-[#E85A0C] px-2 py-1 text-xs text-white">
-    Essentiel
-  </span>
-)}
+                          {food.isEssential && (
+                            <span className="rounded-full bg-[#E85A0C] px-2 py-1 text-xs text-white">
+                              Essentiel
+                            </span>
+                          )}
 
                           <span className="rounded-full bg-white px-2 py-1 text-xs text-gray-600 ring-1 ring-black/5">
                             {getSourceLabel(food.source)}
@@ -525,6 +599,12 @@ export default function FoodsPage() {
                           {food.brand ? `${food.brand} · ` : ""}
                           {food.category}
                         </p>
+
+                        {food.officialName && food.officialName !== food.name && (
+                          <p className="mt-1 text-xs text-gray-400">
+                            Nom officiel : {food.officialName}
+                          </p>
+                        )}
 
                         {food.barcode && (
                           <p className="mt-1 text-xs text-gray-400">

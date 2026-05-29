@@ -12,6 +12,7 @@ import {
   formatMacro,
   isFoodComplete,
   mealTypeLabels,
+  shouldShowFoodInSimpleMode,
   todayLocalDate,
 } from "@/lib/nutrition";
 import { Food, MealItem, MealType } from "@/types/nutrition";
@@ -45,11 +46,13 @@ export default function AddMealPage() {
 
   const filteredFoods = useMemo(() => {
     const hasQuery = query.trim().length > 0;
-
+  
     return foods
       .filter((food) => {
-        if (!hasQuery) return true;
-
+        if (!hasQuery) {
+          return shouldShowFoodInSimpleMode(food, query);
+        }
+  
         return foodMatchesSearch({
           foodName: food.name,
           brand: food.brand,

@@ -628,3 +628,29 @@ export function compareFoodsForSearch(a: Food, b: Food, query: string) {
 
   return a.name.localeCompare(b.name);
 }
+
+export function isUserFriendlyFood(food: Food) {
+  return (
+    food.isEssential ||
+    food.isFavorite ||
+    food.source === "label" ||
+    food.source === "manual" ||
+    food.source === "openfoodfacts"
+  );
+}
+
+export function shouldShowFoodInSimpleMode(food: Food, query: string) {
+  const hasQuery = query.trim().length > 0;
+
+  if (isUserFriendlyFood(food)) {
+    return true;
+  }
+
+  // Si l’utilisateur cherche précisément quelque chose, on autorise la base Ciqual complète.
+  // Mais elle restera classée derrière les aliments essentiels.
+  if (hasQuery) {
+    return true;
+  }
+
+  return false;
+}
