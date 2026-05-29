@@ -111,6 +111,7 @@ export type WeightLog = {
 };
 
 export type AppData = {
+  onboardingCompleted: boolean;
   profile: UserProfile;
   foods: Food[];
   meals: Meal[];

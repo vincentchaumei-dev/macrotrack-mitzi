@@ -34,6 +34,7 @@ const defaultGoals: NutritionGoals = {
 };
 
 const defaultData: AppData = {
+  onboardingCompleted: false,
   profile: defaultProfile,
   foods: seedFoods,
   meals: [],
@@ -44,6 +45,10 @@ const defaultData: AppData = {
 
 function normalizeImportedData(input: Partial<AppData>): AppData {
   return {
+    onboardingCompleted:
+      typeof input.onboardingCompleted === "boolean"
+        ? input.onboardingCompleted
+        : false,
     profile: input.profile ?? defaultProfile,
     foods: Array.isArray(input.foods) ? input.foods : seedFoods,
     meals: Array.isArray(input.meals) ? input.meals : [],
@@ -85,7 +90,6 @@ export function useNutritionStore() {
 
   useEffect(() => {
     if (!hasLoaded) return;
-
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [data, hasLoaded]);
 
@@ -107,10 +111,7 @@ export function useNutritionStore() {
   );
 
   const mealTemplates = useMemo(
-    () =>
-      [...data.mealTemplates].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      ),
+    () => [...data.mealTemplates].sort((a, b) => a.name.localeCompare(b.name)),
     [data.mealTemplates]
   );
 
@@ -118,6 +119,22 @@ export function useNutritionStore() {
     () => [...data.weightLogs].sort((a, b) => b.date.localeCompare(a.date)),
     [data.weightLogs]
   );
+
+  function completeOnboarding(profile: UserProfile, goals: NutritionGoals) {
+    setData((current) => ({
+      ...current,
+      onboardingCompleted: true,
+      profile,
+      goals,
+    }));
+  }
+
+  function setOnboardingCompleted(value: boolean) {
+    setData((current) => ({
+      ...current,
+      onboardingCompleted: value,
+    }));
+  }
 
   function addFood(input: Omit<Food, "id" | "createdAt" | "updatedAt">) {
     const date = new Date().toISOString();
@@ -353,12 +370,15 @@ export function useNutritionStore() {
 
   return {
     hasLoaded,
+    onboardingCompleted: data.onboardingCompleted,
     profile: data.profile,
     foods,
     meals,
     mealTemplates,
     goals: data.goals,
     weightLogs,
+    completeOnboarding,
+    setOnboardingCompleted,
     addFood,
     deleteFood,
     updateFood,

@@ -1,5 +1,6 @@
 "use client";
 
+
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
@@ -16,14 +17,24 @@ import {
   todayLocalDate,
   calculateMealTotals,
 } from "@/lib/nutrition";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const { profile, goals, getMealsByDate, hasLoaded } = useNutritionStore();
+  const { profile, goals, getMealsByDate, hasLoaded, onboardingCompleted } =
+  useNutritionStore();
 
   const today = todayLocalDate();
   const meals = getMealsByDate(today);
   const totals = calculateDayTotals(meals);
   const tdee = calculateTdee(profile);
+  const router = useRouter();
+
+useEffect(() => {
+  if (hasLoaded && !onboardingCompleted) {
+    router.push("/onboarding");
+  }
+}, [hasLoaded, onboardingCompleted, router]);
 
   const coachMessage = getDayCoachMessage({
     calories: totals.calories,
@@ -34,7 +45,7 @@ export default function Home() {
     profile,
   });
 
-  if (!hasLoaded) {
+  if (!hasLoaded || !onboardingCompleted) {
     return (
       <AppShell>
         <p>Chargement...</p>
