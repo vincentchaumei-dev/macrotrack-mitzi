@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap");
+
 @import "tailwindcss";
 
 :root {
@@ -350,4 +352,919 @@ button:disabled {
   .ui-button-primary::before {
     display: none;
   }
+}
+
+/* Responsive hardening */
+
+.ui-page-title {
+  font-size: clamp(2.65rem, 11vw, 4.9rem);
+  letter-spacing: -0.065em;
+  line-height: 0.92;
+}
+
+.ui-hero-number {
+  font-size: clamp(4.2rem, 18vw, 7.4rem);
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+}
+
+.ui-section-title {
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.ui-card {
+  border-radius: clamp(28px, 8vw, 42px);
+}
+
+.ui-card-soft {
+  border-radius: clamp(26px, 7vw, 34px);
+}
+
+.ui-red-card {
+  border-radius: clamp(28px, 8vw, 42px);
+}
+
+.ui-ring-size {
+  width: clamp(10.5rem, 48vw, 14rem);
+  height: clamp(10.5rem, 48vw, 14rem);
+}
+
+.ui-mobile-card-padding {
+  padding: clamp(1rem, 4vw, 1.5rem);
+}
+
+@media (max-width: 420px) {
+  .input {
+    border-radius: 18px;
+    padding: 0.78rem 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .ui-button-primary,
+  .ui-button-soft,
+  .ui-button-ghost,
+  .ui-button-danger {
+    padding-inline: 1rem;
+    padding-block: 0.78rem;
+    font-size: 0.82rem;
+  }
+
+  .ui-pill {
+    padding: 0.3rem 0.62rem;
+    font-size: 0.66rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .ui-page-title {
+    font-size: 2.35rem;
+  }
+
+  .ui-hero-number {
+    font-size: 3.65rem;
+  }
+
+  .ui-ring-size {
+    width: 9.5rem;
+    height: 9.5rem;
+  }
+}
+
+/* Smartphone-first web app mode */
+
+.mobile-app-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.mobile-app-main {
+  padding-bottom: calc(6.8rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+  .mobile-app-shell {
+    min-height: calc(100svh - 2rem);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 38px;
+    overflow: hidden;
+    box-shadow:
+      0 40px 120px rgba(28, 21, 18, 0.16),
+      0 0 0 1px rgba(23, 23, 23, 0.06);
+  }
+}
+
+/* Force les layouts desktop à rester mobile dans la web app */
+.mobile-app-scope [class*="md:grid-cols"],
+.mobile-app-scope [class*="lg:grid-cols"],
+.mobile-app-scope [class*="xl:grid-cols"] {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.mobile-app-scope [class*="md:flex-row"],
+.mobile-app-scope [class*="lg:flex-row"],
+.mobile-app-scope [class*="xl:flex-row"] {
+  flex-direction: column !important;
+}
+
+.mobile-app-scope [class*="xl:sticky"],
+.mobile-app-scope [class*="lg:sticky"] {
+  position: static !important;
+}
+
+.mobile-app-scope [class*="max-w-6xl"],
+.mobile-app-scope [class*="max-w-[1500px]"] {
+  max-width: 100% !important;
+}
+
+.ui-page-title {
+  font-size: clamp(2.35rem, 12vw, 3.6rem);
+  letter-spacing: -0.065em;
+  line-height: 0.94;
+}
+
+.ui-hero-number {
+  font-size: clamp(3.5rem, 18vw, 5.6rem);
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+}
+
+.ui-section-title {
+  font-size: clamp(1.65rem, 7vw, 2.15rem);
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.ui-ring-size {
+  width: clamp(9.5rem, 48vw, 12.5rem);
+  height: clamp(9.5rem, 48vw, 12.5rem);
+}
+
+@media (max-width: 390px) {
+  .input {
+    border-radius: 18px;
+    padding: 0.78rem 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .ui-button-primary,
+  .ui-button-soft,
+  .ui-button-ghost,
+  .ui-button-danger {
+    padding-inline: 1rem;
+    padding-block: 0.78rem;
+    font-size: 0.82rem;
+  }
+
+  .ui-pill {
+    padding: 0.3rem 0.62rem;
+    font-size: 0.66rem;
+  }
+}
+
+/* =========================================================
+   MacroTrack v3 — immersive mobile-first UI
+   Inspired by the cherry immersive design direction
+   ========================================================= */
+
+   :root {
+     --mt-bg: #faf7f3;
+     --mt-bg-warm: #f2ece4;
+     --mt-card: #ffffff;
+     --mt-card-soft: #fcfaf7;
+   
+     --mt-ink: #171318;
+     --mt-ink-2: #6a6470;
+     --mt-ink-3: #a8a2ac;
+   
+     --mt-rouge: #c01e3c;
+     --mt-rouge-lit: #e8455f;
+     --mt-rouge-deep: #7c0f25;
+     --mt-rouge-soft: #f7d2d9;
+     --mt-rouge-wash: #fcedf0;
+     --mt-rouge-glow: rgba(192, 30, 60, 0.4);
+   
+     --mt-success: #4e9678;
+     --mt-success-soft: #e0eee7;
+     --mt-warn: #c68a3a;
+     --mt-warn-soft: #f5e8d5;
+   
+     --mt-prot: #c53350;
+     --mt-carb: #d69b3f;
+     --mt-fat: #6e7ca6;
+   
+     --mt-line: #ede7df;
+     --mt-line-2: #e2dbd1;
+   
+     --mt-shadow-sm: 0 1px 2px rgba(23, 19, 24, 0.04),
+       0 4px 12px -6px rgba(23, 19, 24, 0.08);
+     --mt-shadow: 0 1px 2px rgba(23, 19, 24, 0.04),
+       0 14px 34px -16px rgba(23, 19, 24, 0.18);
+     --mt-shadow-lift: 0 2px 5px rgba(23, 19, 24, 0.05),
+       0 28px 64px -24px rgba(23, 19, 24, 0.3);
+     --mt-shadow-red: 0 14px 32px -10px var(--mt-rouge-glow);
+   
+     --mt-sans: "Schibsted Grotesk", system-ui, sans-serif;
+     --mt-display: "Fraunces", Georgia, serif;
+   }
+   
+   html {
+     background: var(--mt-bg);
+   }
+   
+   body {
+     background:
+       radial-gradient(1100px 620px at 88% -12%, rgba(192, 30, 60, 0.08), transparent 58%),
+       radial-gradient(900px 560px at -8% 10%, rgba(192, 30, 60, 0.045), transparent 56%),
+       var(--mt-bg);
+     color: var(--mt-ink);
+     font-family: var(--mt-sans);
+     -webkit-font-smoothing: antialiased;
+   }
+   
+   .mt-app-bg {
+     min-height: 100svh;
+     background:
+       radial-gradient(1100px 620px at 88% -12%, rgba(192, 30, 60, 0.08), transparent 58%),
+       radial-gradient(900px 560px at -8% 10%, rgba(192, 30, 60, 0.045), transparent 56%),
+       var(--mt-bg);
+   }
+   
+   .mt-phone-shell {
+     width: 100%;
+     max-width: 480px;
+     min-height: 100svh;
+     margin: 0 auto;
+     background: var(--mt-bg);
+     position: relative;
+     overflow-x: hidden;
+   }
+   
+   @media (min-width: 640px) {
+     .mt-phone-shell {
+       min-height: calc(100svh - 2rem);
+       margin-top: 1rem;
+       margin-bottom: 1rem;
+       border-radius: 44px;
+       overflow: hidden;
+       box-shadow:
+         0 60px 110px -45px rgba(23, 19, 24, 0.5),
+         0 0 0 1px rgba(23, 19, 24, 0.08);
+     }
+   }
+   
+   .mt-main {
+     padding: 18px 18px calc(7.2rem + env(safe-area-inset-bottom));
+   }
+   
+   .mt-topbar {
+     position: sticky;
+     top: 0;
+     z-index: 45;
+     background: rgba(250, 247, 243, 0.88);
+     backdrop-filter: blur(24px) saturate(1.4);
+     border-bottom: 1px solid var(--mt-line);
+   }
+   
+   .mt-bottom-nav {
+     position: fixed;
+     left: 50%;
+     bottom: 0;
+     z-index: 50;
+     width: 100%;
+     max-width: 480px;
+     transform: translateX(-50%);
+     background: rgba(255, 255, 255, 0.88);
+     backdrop-filter: blur(24px) saturate(1.5);
+     border-top: 1px solid var(--mt-line);
+     padding: 12px 16px calc(26px + env(safe-area-inset-bottom));
+     display: grid;
+     grid-template-columns: 1fr 1fr 70px 1fr 1fr;
+     align-items: end;
+     box-shadow: 0 -18px 40px rgba(28, 21, 18, 0.08);
+   }
+   
+   .mt-nav-item {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     gap: 4px;
+     color: var(--mt-ink-3);
+     font-size: 9.5px;
+     font-weight: 700;
+   }
+   
+   .mt-nav-item-active {
+     color: var(--mt-rouge);
+   }
+   
+   .mt-fab {
+     width: 58px;
+     height: 58px;
+     border-radius: 20px;
+     background: linear-gradient(160deg, var(--mt-rouge-lit), var(--mt-rouge-deep));
+     color: white;
+     display: grid;
+     place-items: center;
+     box-shadow: var(--mt-shadow-red), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+     margin: -28px auto 0;
+   }
+   
+   .mt-menu-sheet {
+     position: fixed;
+     inset: auto 0 0 0;
+     z-index: 70;
+     width: 100%;
+     max-width: 480px;
+     margin: 0 auto;
+     border-radius: 34px 34px 0 0;
+     background: var(--mt-bg);
+     padding: 18px 18px calc(20px + env(safe-area-inset-bottom));
+     box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.18);
+   }
+   
+   .mt-card {
+     background: var(--mt-card);
+     border: 1px solid var(--mt-line);
+     border-radius: 22px;
+     box-shadow: var(--mt-shadow);
+   }
+   
+   .mt-soft-card {
+     background: var(--mt-card-soft);
+     border: 1px solid var(--mt-line);
+     border-radius: 22px;
+     box-shadow: var(--mt-shadow-sm);
+   }
+   
+   .mt-display {
+     font-family: var(--mt-display);
+   }
+   
+   .mt-btn-primary {
+     width: 100%;
+     padding: 16px;
+     border-radius: 18px;
+     background: linear-gradient(160deg, var(--mt-rouge-lit), var(--mt-rouge-deep));
+     color: white;
+     font-family: var(--mt-sans);
+     font-size: 15px;
+     font-weight: 800;
+     box-shadow: var(--mt-shadow-red), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+   }
+   
+   .mt-btn-soft {
+     padding: 12px 15px;
+     border-radius: 999px;
+     background: var(--mt-rouge-wash);
+     color: var(--mt-rouge-deep);
+     border: 1px solid var(--mt-rouge-soft);
+     font-size: 13px;
+     font-weight: 800;
+   }
+   
+   .mt-pill {
+     display: inline-flex;
+     align-items: center;
+     border-radius: 999px;
+     padding: 7px 12px;
+     font-size: 11px;
+     font-weight: 800;
+     letter-spacing: 0.04em;
+   }
+   
+   .mt-pill-red {
+     background: var(--mt-rouge-wash);
+     color: var(--mt-rouge-deep);
+   }
+   
+   .mt-pill-white {
+     background: rgba(255, 255, 255, 0.18);
+     color: white;
+     border: 1px solid rgba(255, 255, 255, 0.22);
+     backdrop-filter: blur(8px);
+   }
+   
+   /* Dashboard immersive */
+   
+   .mt-immersive {
+     position: relative;
+     padding: 16px 22px 32px;
+     background: linear-gradient(
+       168deg,
+       #e8455f 0%,
+       #c01e3c 42%,
+       #8e1228 78%,
+       #6e0c1e 100%
+     );
+     color: white;
+     overflow: hidden;
+   }
+   
+   .mt-immersive::before {
+     content: "";
+     position: absolute;
+     inset: 0;
+     background:
+       radial-gradient(500px 280px at 82% 6%, rgba(255, 255, 255, 0.22), transparent 58%),
+       radial-gradient(420px 420px at 6% 96%, rgba(255, 255, 255, 0.1), transparent 60%);
+   }
+   
+   .mt-immersive::after {
+     content: "";
+     position: absolute;
+     top: -80px;
+     right: -90px;
+     width: 280px;
+     height: 280px;
+     border-radius: 999px;
+     border: 1.5px solid rgba(255, 255, 255, 0.1);
+     box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.04);
+   }
+   
+   .mt-immersive-inner {
+     position: relative;
+     z-index: 2;
+   }
+   
+   .mt-week {
+     display: grid;
+     grid-template-columns: repeat(7, 1fr);
+     gap: 2px;
+     margin-top: 18px;
+   }
+   
+   .mt-week-day {
+     text-align: center;
+   }
+   
+   .mt-week-label {
+     font-size: 10px;
+     color: rgba(255, 255, 255, 0.62);
+     font-weight: 700;
+     text-transform: uppercase;
+   }
+   
+   .mt-week-num {
+     width: 34px;
+     height: 34px;
+     line-height: 34px;
+     margin: 8px auto 0;
+     border-radius: 12px;
+     font-size: 14px;
+     font-weight: 800;
+   }
+   
+   .mt-week-active .mt-week-num {
+     background: white;
+     color: var(--mt-rouge);
+   }
+   
+   .mt-week-active .mt-week-label {
+     color: white;
+   }
+   
+   .mt-big-cal {
+     text-align: center;
+     margin: 20px 0 8px;
+   }
+   
+   .mt-big-cal-number {
+     font-family: var(--mt-display);
+     font-size: clamp(4.8rem, 24vw, 6.4rem);
+     font-weight: 600;
+     letter-spacing: -0.06em;
+     line-height: 0.82;
+     text-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+   }
+   
+   .mt-big-cal-label {
+     margin-top: 12px;
+     color: rgba(255, 255, 255, 0.84);
+     font-size: 13px;
+   }
+   
+   .mt-progress-line {
+     height: 9px;
+     border-radius: 999px;
+     background: rgba(255, 255, 255, 0.22);
+     margin: 22px 4px 18px;
+     overflow: hidden;
+   }
+   
+   .mt-progress-line > i {
+     display: block;
+     height: 100%;
+     border-radius: inherit;
+     background: white;
+     box-shadow: 0 0 14px rgba(255, 255, 255, 0.5);
+   }
+   
+   .mt-immersive-macros {
+     display: grid;
+     grid-template-columns: repeat(3, 1fr);
+     gap: 9px;
+   }
+   
+   .mt-immersive-macro {
+     background: rgba(255, 255, 255, 0.14);
+     backdrop-filter: blur(8px);
+     border: 1px solid rgba(255, 255, 255, 0.18);
+     border-radius: 18px;
+     padding: 13px 10px;
+   }
+   
+   .mt-immersive-macro-label {
+     font-size: 10.5px;
+     color: rgba(255, 255, 255, 0.78);
+     font-weight: 700;
+     margin-bottom: 4px;
+   }
+   
+   .mt-immersive-macro-value {
+     font-family: var(--mt-display);
+     font-size: 19px;
+     font-weight: 600;
+     line-height: 1;
+   }
+   
+   .mt-immersive-macro-value small {
+     font-family: var(--mt-sans);
+     font-size: 10px;
+     font-weight: 500;
+     color: rgba(255, 255, 255, 0.66);
+   }
+   
+   .mt-mini-bar {
+     height: 4px;
+     border-radius: 999px;
+     background: rgba(255, 255, 255, 0.22);
+     margin-top: 9px;
+     overflow: hidden;
+   }
+   
+   .mt-mini-bar > i {
+     display: block;
+     height: 100%;
+     border-radius: inherit;
+     background: white;
+   }
+   
+   .mt-sheet {
+     position: relative;
+     z-index: 4;
+     background: var(--mt-bg);
+     border-radius: 30px 30px 0 0;
+     margin-top: -22px;
+     padding: 22px 20px 0;
+     box-shadow: 0 -12px 30px -16px rgba(23, 19, 24, 0.12);
+   }
+   
+   .mt-sheet-grip {
+     width: 40px;
+     height: 4px;
+     border-radius: 999px;
+     background: var(--mt-line-2);
+     margin: 0 auto 18px;
+   }
+   
+   .mt-section-head {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin: 0 2px 13px;
+   }
+   
+   .mt-section-head h2 {
+     font-family: var(--mt-display);
+     font-size: 20px;
+     font-weight: 650;
+     letter-spacing: -0.02em;
+   }
+   
+   .mt-section-head a {
+     color: var(--mt-rouge);
+     font-size: 12.5px;
+     font-weight: 800;
+   }
+   
+   .mt-meal-row {
+     background: var(--mt-card);
+     border: 1px solid var(--mt-line);
+     border-radius: 20px;
+     padding: 13px;
+     display: flex;
+     align-items: center;
+     gap: 13px;
+     box-shadow: var(--mt-shadow);
+     margin-bottom: 11px;
+   }
+   
+   .mt-meal-thumb {
+     width: 52px;
+     height: 52px;
+     border-radius: 15px;
+     flex: 0 0 auto;
+     overflow: hidden;
+     background: linear-gradient(140deg, #e8455f, #b5304b);
+     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+   }
+   
+   .mt-meal-info {
+     min-width: 0;
+     flex: 1;
+   }
+   
+   .mt-meal-title {
+     font-weight: 800;
+     font-size: 14.5px;
+     color: var(--mt-ink);
+   }
+   
+   .mt-meal-sub {
+     margin-top: 3px;
+     display: flex;
+     gap: 7px;
+     flex-wrap: wrap;
+     font-size: 11px;
+     color: var(--mt-ink-3);
+   }
+   
+   .mt-meal-sub b {
+     color: var(--mt-ink-2);
+     font-weight: 800;
+   }
+   
+   .mt-meal-kcal {
+     text-align: right;
+     flex: 0 0 auto;
+   }
+   
+   .mt-meal-kcal-number {
+     font-family: var(--mt-display);
+     font-size: 21px;
+     font-weight: 650;
+     letter-spacing: -0.02em;
+   }
+   
+   .mt-meal-kcal-unit {
+     font-size: 9px;
+     color: var(--mt-ink-3);
+     letter-spacing: 0.05em;
+     text-transform: uppercase;
+   }
+   
+   .mt-insight {
+     position: relative;
+     border-radius: 20px;
+     padding: 16px 17px;
+     margin: 4px 0 24px;
+     display: flex;
+     gap: 13px;
+     align-items: flex-start;
+     overflow: hidden;
+     background: linear-gradient(120deg, var(--mt-rouge-wash), white);
+     border: 1px solid var(--mt-rouge-soft);
+   }
+   
+   .mt-insight-icon {
+     width: 36px;
+     height: 36px;
+     border-radius: 12px;
+     background: white;
+     color: var(--mt-rouge);
+     display: grid;
+     place-items: center;
+     flex: 0 0 auto;
+     box-shadow: var(--mt-shadow-sm);
+   }
+   
+   .mt-insight p {
+     font-size: 13px;
+     color: var(--mt-ink);
+     line-height: 1.55;
+   }
+   
+   .mt-insight b {
+     color: var(--mt-rouge-deep);
+   }
+
+   /* =========================================================
+   MOBILE APP FIX — stop desktop layouts inside the phone shell
+   ========================================================= */
+
+.mt-phone-shell {
+  width: min(100%, 430px);
+  max-width: 430px;
+  overflow-x: hidden;
+}
+
+.mt-phone-shell * {
+  min-width: 0;
+}
+
+.mt-phone-shell main {
+  overflow-x: hidden;
+}
+
+/* Pages should never behave like desktop inside the app frame */
+.mt-phone-shell [class*="max-w-6xl"],
+.mt-phone-shell [class*="max-w-5xl"],
+.mt-phone-shell [class*="max-w-4xl"],
+.mt-phone-shell [class*="max-w-[1500px]"] {
+  max-width: 100% !important;
+}
+
+/* Kill desktop grids inside the mobile app */
+.mt-phone-shell [class*="xl:grid-cols"],
+.mt-phone-shell [class*="lg:grid-cols"] {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+/* Most md 2-column layouts should become one column in the app */
+.mt-phone-shell [class*="md:grid-cols-2"] {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+/* Stats with 4 items should become 2x2, not 4 tiny columns */
+.mt-phone-shell [class*="md:grid-cols-4"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* Flex rows from desktop pages should stack */
+.mt-phone-shell [class*="md:flex-row"],
+.mt-phone-shell [class*="lg:flex-row"],
+.mt-phone-shell [class*="xl:flex-row"] {
+  flex-direction: column !important;
+}
+
+/* Sticky desktop side panels are bad in mobile app mode */
+.mt-phone-shell [class*="xl:sticky"],
+.mt-phone-shell [class*="lg:sticky"] {
+  position: static !important;
+}
+
+/* Prevent cards from becoming huge */
+.mt-phone-shell .ui-card,
+.mt-phone-shell .ui-card-soft,
+.mt-phone-shell .ui-red-card,
+.mt-phone-shell .mt-card,
+.mt-phone-shell .mt-soft-card {
+  border-radius: 22px !important;
+}
+
+.mt-phone-shell .ui-card,
+.mt-phone-shell .ui-card-soft,
+.mt-phone-shell .ui-red-card {
+  padding: 18px !important;
+}
+
+/* PremiumUI typography must be mobile-native */
+.mt-phone-shell .ui-page-title {
+  font-size: clamp(2.8rem, 15vw, 4.1rem) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.07em !important;
+}
+
+.mt-phone-shell .ui-section-title {
+  font-size: clamp(1.55rem, 8vw, 2rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.055em !important;
+}
+
+/* Stat cards should feel like app widgets */
+.mt-phone-shell .ui-card p,
+.mt-phone-shell .ui-card-soft p {
+  overflow-wrap: anywhere;
+}
+
+.mt-phone-shell .ui-button-primary,
+.mt-phone-shell .ui-button-soft,
+.mt-phone-shell .ui-button-ghost,
+.mt-phone-shell .ui-button-danger {
+  min-height: 46px;
+  font-size: 13px;
+}
+
+/* Dashboard hero tuning */
+.mt-immersive {
+  border-radius: 0 0 0 0;
+  padding-top: 18px;
+}
+
+.mt-big-cal-number {
+  font-size: clamp(5.2rem, 25vw, 6.4rem) !important;
+}
+
+.mt-sheet {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+/* Meal rows must stay compact */
+.mt-meal-row {
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.mt-meal-title {
+  font-size: 14px;
+}
+
+.mt-meal-kcal-number {
+  font-size: 20px;
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+  .mt-main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .mt-immersive {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .mt-sheet {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .mt-immersive-macros {
+    gap: 7px;
+  }
+
+  .mt-immersive-macro {
+    padding: 11px 8px;
+  }
+
+  .mt-immersive-macro-value {
+    font-size: 17px;
+  }
+
+  .mt-phone-shell [class*="md:grid-cols-4"] {
+    gap: 10px !important;
+  }
+}
+
+.JournalAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 18px;
+  background: white;
+  border: 1px solid var(--mt-line);
+  box-shadow: var(--mt-shadow-sm);
+  padding: 14px 15px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--mt-ink);
+}
+
+.FoodInput {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--mt-line);
+  background: var(--mt-card-soft);
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--mt-ink);
+  outline: none;
+}
+
+.FoodInput::placeholder {
+  color: var(--mt-ink-3);
+}
+
+.FoodAction,
+.FoodActionRed,
+.FoodActionDanger {
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.FoodAction {
+  background: var(--mt-card-soft);
+  color: var(--mt-ink);
+  border: 1px solid var(--mt-line);
+}
+
+.FoodActionRed {
+  background: var(--mt-rouge-wash);
+  color: var(--mt-rouge-deep);
+  border: 1px solid var(--mt-rouge-soft);
+}
+
+.FoodActionDanger {
+  background: white;
+  color: var(--mt-rouge-deep);
+  border: 1px solid var(--mt-rouge-soft);
 }

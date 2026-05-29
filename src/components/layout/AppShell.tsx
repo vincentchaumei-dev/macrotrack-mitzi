@@ -18,23 +18,17 @@ const allNavigation = [
   { label: "Paramètres", href: "/settings", icon: "settings" },
 ];
 
-const primaryNavigation = [
-  { label: "Accueil", href: "/", icon: "home" },
-  { label: "Journal", href: "/journal", icon: "journal" },
-  { label: "Ajouter", href: "/add", icon: "plus", isMain: true },
-  { label: "Aliments", href: "/foods", icon: "foods" },
-  { label: "Repas", href: "/recipes", icon: "meal" },
-];
-
 const bottomNavigation = [
   { label: "Accueil", href: "/", icon: "home" },
   { label: "Journal", href: "/journal", icon: "journal" },
-  { label: "Repas", href: "/recipes", icon: "meal" },
+  { label: "Analyse", href: "/analytics", icon: "chart" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const isDashboard = pathname === "/";
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -42,110 +36,41 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="app-premium-bg min-h-screen text-[#171717]">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1500px]">
-        <aside className="sticky top-0 hidden h-screen w-[116px] shrink-0 p-4 lg:block">
-          <div className="flex h-full flex-col items-center rounded-[38px] bg-white/82 px-3 py-4 shadow-[0_24px_70px_rgba(28,21,18,0.08)] ring-1 ring-black/5 backdrop-blur-xl">
-            <Link href="/" className="flex flex-col items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-[26px] bg-[#E94B4B] text-lg font-black text-white shadow-[0_16px_30px_rgba(233,75,75,0.25)]">
-                M
-              </div>
-              <p className="mt-3 text-xs font-black tracking-tight">
-                MacroTrack
-              </p>
-              <p className="text-[10px] font-medium text-[#7A746E]">
-                Nutrition douce
-              </p>
-            </Link>
-
-            <nav className="mt-8 flex w-full flex-1 flex-col items-center gap-3">
-              {primaryNavigation.map((item) => {
-                const active = isActive(item.href);
-
-                if (item.isMain) {
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="my-1 flex h-16 w-16 items-center justify-center rounded-full bg-[#E94B4B] text-white shadow-[0_18px_34px_rgba(233,75,75,0.34)] transition hover:bg-[#B92D35]"
-                      aria-label={item.label}
-                    >
-                      <Icon name={item.icon} />
-                    </Link>
-                  );
-                }
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`group flex w-full flex-col items-center gap-1 rounded-[24px] px-2 py-3 text-[11px] font-bold transition ${
-                      active
-                        ? "bg-[#FFE1DD] text-[#E94B4B]"
-                        : "text-[#7A746E] hover:bg-[#FFF2EE] hover:text-[#171717]"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
-                        active
-                          ? "bg-white shadow-sm"
-                          : "bg-transparent group-hover:bg-white"
-                      }`}
-                    >
-                      <Icon name={item.icon} />
-                    </span>
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <button
-              onClick={() => setMenuOpen(true)}
-              className="mt-4 flex w-full flex-col items-center gap-1 rounded-[24px] px-2 py-3 text-[11px] font-bold text-[#7A746E] transition hover:bg-[#FFF2EE] hover:text-[#171717]"
-            >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full group-hover:bg-white">
-                <Icon name="menu" />
-              </span>
-              <span>Menu</span>
-            </button>
-          </div>
-        </aside>
-
-        <div className="flex min-w-0 flex-1 flex-col text-[#171717]">
-          <header className="sticky top-0 z-30 border-b border-black/5 bg-[#FBF7F1]/86 px-4 py-3 backdrop-blur-xl lg:hidden">
+    <div className="mt-app-bg">
+      <div className="mt-phone-shell">
+        {!isDashboard && (
+          <header className="mt-topbar px-5 py-3">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-[22px] bg-[#E94B4B] text-sm font-black text-white shadow-[0_14px_28px_rgba(233,75,75,0.25)]">
+                <div className="grid h-11 w-11 place-items-center rounded-[16px] bg-[var(--mt-rouge)] font-[var(--mt-display)] text-lg font-semibold text-white shadow-[var(--mt-shadow-red)]">
                   M
                 </div>
 
                 <div>
-                  <p className="font-black tracking-tight">MacroTrack</p>
-                  <p className="text-xs font-medium text-[#7A746E]">
+                  <p className="font-[var(--mt-display)] text-lg font-semibold leading-none tracking-[-0.02em] text-[var(--mt-ink)]">
+                    MacroTrack
+                  </p>
+                  <p className="mt-1 text-[11px] font-bold text-[var(--mt-ink-2)]">
                     Nutrition douce
                   </p>
                 </div>
               </Link>
 
               <button
+                type="button"
                 onClick={() => setMenuOpen(true)}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5"
+                className="grid h-11 w-11 place-items-center rounded-[14px] bg-white text-[var(--mt-ink-2)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
                 aria-label="Ouvrir le menu"
               >
                 <Icon name="menu" />
               </button>
             </div>
           </header>
+        )}
 
-          <main className="safe-bottom w-full px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
-            {children}
-          </main>
-        </div>
-      </div>
+        <main className={isDashboard ? "" : "mt-main"}>{children}</main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-black/5 bg-white/88 px-3 pb-[calc(0.7rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-18px_40px_rgba(28,21,18,0.08)] backdrop-blur-xl lg:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 items-end gap-1">
+        <nav className="mt-bottom-nav">
           <BottomNavItem
             item={bottomNavigation[0]}
             active={isActive(bottomNavigation[0].href)}
@@ -156,12 +81,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             active={isActive(bottomNavigation[1].href)}
           />
 
-          <Link
-            href="/add"
-            className="mx-auto flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full bg-[#E94B4B] text-white shadow-[0_18px_32px_rgba(233,75,75,0.34)] ring-8 ring-white"
-            aria-label="Ajouter un repas"
-          >
-            <Icon name="plus" />
+          <Link href="/add" className="mt-fab" aria-label="Ajouter un repas">
+            <Icon name="plus" size="large" />
           </Link>
 
           <BottomNavItem
@@ -170,43 +91,46 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
 
           <button
+            type="button"
             onClick={() => setMenuOpen(true)}
-            className="flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-xs font-bold text-[#7A746E]"
+            className="mt-nav-item"
           >
             <Icon name="menu" />
             <span>Menu</span>
           </button>
-        </div>
-      </nav>
+        </nav>
 
-      {menuOpen && (
-        <div className="fixed inset-0 z-50">
-          <button
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-            onClick={() => setMenuOpen(false)}
-            aria-label="Fermer le menu"
-          />
+        {menuOpen && (
+          <div className="fixed inset-0 z-[80]">
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/25 backdrop-blur-sm"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Fermer le menu"
+            />
 
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-[38px] bg-[#FBF7F1] p-4 shadow-[0_-24px_60px_rgba(0,0,0,0.18)] lg:bottom-auto lg:left-auto lg:right-6 lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-[390px] lg:rounded-[38px] lg:shadow-[0_30px_90px_rgba(28,21,18,0.22)]">
-            <div className="mx-auto flex h-full max-w-md flex-col">
+            <div className="mt-menu-sheet">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold text-[#E94B4B]">Menu</p>
-                  <h2 className="text-2xl font-black tracking-tight">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+                    Menu
+                  </p>
+                  <h2 className="mt-display mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
                     Toutes les pages
                   </h2>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setMenuOpen(false)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5"
+                  className="grid h-11 w-11 place-items-center rounded-[14px] bg-white text-[var(--mt-ink-2)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
                   aria-label="Fermer"
                 >
                   <Icon name="x" />
                 </button>
               </div>
 
-              <div className="grid gap-2 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+              <div className="grid max-h-[70svh] gap-2 overflow-y-auto pb-3">
                 {allNavigation.map((item) => {
                   const active = isActive(item.href);
 
@@ -215,15 +139,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                       key={item.href}
                       href={item.href}
                       onClick={() => setMenuOpen(false)}
-                      className={`flex items-center gap-3 rounded-[24px] px-4 py-3 text-sm font-bold transition ${
+                      className={`flex items-center gap-3 rounded-[20px] px-4 py-3 text-sm font-extrabold transition ${
                         active
-                          ? "bg-[#E94B4B] text-white shadow-[0_16px_30px_rgba(233,75,75,0.22)]"
-                          : "bg-white text-[#171717] ring-1 ring-black/5 hover:bg-[#FFF2EE]"
+                          ? "bg-[var(--mt-rouge)] text-white shadow-[var(--mt-shadow-red)]"
+                          : "bg-white text-[var(--mt-ink)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
                       }`}
                     >
                       <span
-                        className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                          active ? "bg-white/16" : "bg-[#FFFAF5]"
+                        className={`grid h-10 w-10 place-items-center rounded-[14px] ${
+                          active
+                            ? "bg-white/16"
+                            : "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge)]"
                         }`}
                       >
                         <Icon name={item.icon} />
@@ -233,17 +159,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   );
                 })}
               </div>
-
-              <div className="mt-auto hidden rounded-[28px] bg-white p-4 ring-1 ring-black/5 lg:block">
-                <p className="text-sm font-black">Focus doux</p>
-                <p className="mt-2 text-xs leading-5 text-[#7A746E]">
-                  On suit la tendance, pas la perfection d’une journée isolée.
-                </p>
-              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -258,9 +177,7 @@ function BottomNavItem({
   return (
     <Link
       href={item.href}
-      className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-xs font-bold ${
-        active ? "text-[#E94B4B]" : "text-[#7A746E]"
-      }`}
+      className={`mt-nav-item ${active ? "mt-nav-item-active" : ""}`}
     >
       <Icon name={item.icon} />
       <span>{item.label}</span>
@@ -268,13 +185,19 @@ function BottomNavItem({
   );
 }
 
-function Icon({ name }: { name: string }) {
+function Icon({
+  name,
+  size = "normal",
+}: {
+  name: string;
+  size?: "normal" | "large";
+}) {
   const common = {
-    className: "h-5 w-5",
+    className: size === "large" ? "h-7 w-7" : "h-5 w-5",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: "2",
+    strokeWidth: "2.2",
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
   };
@@ -292,10 +215,10 @@ function Icon({ name }: { name: string }) {
   if (name === "journal") {
     return (
       <svg {...common}>
-        <path d="M7 4h10a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-        <path d="M9 8h6" />
-        <path d="M9 12h6" />
-        <path d="M9 16h4" />
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M3 10h18" />
+        <path d="M8 2v4" />
+        <path d="M16 2v4" />
       </svg>
     );
   }
@@ -305,6 +228,14 @@ function Icon({ name }: { name: string }) {
       <svg {...common}>
         <path d="M12 5v14" />
         <path d="M5 12h14" />
+      </svg>
+    );
+  }
+
+  if (name === "chart") {
+    return (
+      <svg {...common}>
+        <path d="M3 12h4l3 8 4-16 3 8h4" />
       </svg>
     );
   }
@@ -355,8 +286,6 @@ function Icon({ name }: { name: string }) {
       <svg {...common}>
         <circle cx="12" cy="12" r="8" />
         <circle cx="12" cy="12" r="3" />
-        <path d="M12 2v3" />
-        <path d="M22 12h-3" />
       </svg>
     );
   }
@@ -370,20 +299,10 @@ function Icon({ name }: { name: string }) {
     );
   }
 
-  if (name === "chart") {
-    return (
-      <svg {...common}>
-        <path d="M4 19V5" />
-        <path d="M4 19h16" />
-        <path d="M8 15l3-4 3 2 5-7" />
-      </svg>
-    );
-  }
-
   if (name === "settings") {
     return (
       <svg {...common}>
-        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+        <circle cx="12" cy="12" r="3" />
         <path d="M19.4 15a1.8 1.8 0 0 0 .36 2l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.8 1.8 0 0 0-2-.36 1.8 1.8 0 0 0-1 1.63V21a2 2 0 1 1-4 0v-.06a1.8 1.8 0 0 0-1-1.63 1.8 1.8 0 0 0-2 .36l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04a1.8 1.8 0 0 0 .36-2 1.8 1.8 0 0 0-1.63-1H3a2 2 0 1 1 0-4h.06a1.8 1.8 0 0 0 1.63-1 1.8 1.8 0 0 0-.36-2l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04a1.8 1.8 0 0 0 2 .36 1.8 1.8 0 0 0 1-1.63V3a2 2 0 1 1 4 0v.06a1.8 1.8 0 0 0 1 1.63 1.8 1.8 0 0 0 2-.36l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04a1.8 1.8 0 0 0-.36 2 1.8 1.8 0 0 0 1.63 1H21a2 2 0 1 1 0 4h-.06a1.8 1.8 0 0 0-1.54 1Z" />
       </svg>
     );

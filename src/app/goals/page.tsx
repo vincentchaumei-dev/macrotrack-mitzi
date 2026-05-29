@@ -26,7 +26,7 @@ const activityLabels: Record<string, string> = {
 const goalSpeedLabels: Record<string, string> = {
   gentle: "Progressif",
   moderate: "Modéré",
-  ambitious: "Rapide",
+  assertive: "Rapide",
 };
 
 function parseNumber(value: string) {
@@ -42,13 +42,13 @@ function calculateSuggestedGoals(profile: UserProfile): NutritionGoals {
   if (profile.goalType === "fat_loss") {
     if (profile.goalSpeed === "gentle") calories = tdee - 250;
     if (profile.goalSpeed === "moderate") calories = tdee - 400;
-    if (profile.goalSpeed === "ambitious") calories = tdee - 550;
+    if (profile.goalSpeed === "assertive") calories = tdee - 550;
   }
 
   if (profile.goalType === "muscle_gain") {
     if (profile.goalSpeed === "gentle") calories = tdee + 150;
     if (profile.goalSpeed === "moderate") calories = tdee + 250;
-    if (profile.goalSpeed === "ambitious") calories = tdee + 350;
+    if (profile.goalSpeed === "assertive") calories = tdee + 350;
   }
 
   const safeCalories = Math.max(1300, Math.round(calories));

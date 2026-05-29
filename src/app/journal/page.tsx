@@ -3,18 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import {
-  DangerButton,
-  EmptyState,
-  GhostButton,
-  PageHeader,
-  Pill,
-  PremiumCard,
-  PrimaryButton,
-  SectionTitle,
-  SoftButton,
-  StatCard,
-} from "@/components/ui/PremiumUI";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   calculateDayTotals,
@@ -24,7 +12,6 @@ import {
   todayLocalDate,
 } from "@/lib/nutrition";
 import { Meal } from "@/types/nutrition";
-import { PremiumMealCard } from "@/components/ui/PremiumMealCard";
 
 function toNumber(value: number | null | undefined) {
   return typeof value === "number" ? value : 0;
@@ -32,7 +19,7 @@ function toNumber(value: number | null | undefined) {
 
 function getPercent(value: number, target: number) {
   if (target <= 0) return 0;
-  return Math.min(120, Math.round((value / target) * 100));
+  return Math.min(100, Math.round((value / target) * 100));
 }
 
 function shiftDate(date: string, offsetDays: number) {
@@ -41,12 +28,9 @@ function shiftDate(date: string, offsetDays: number) {
   return nextDate.toISOString().slice(0, 10);
 }
 
-function getPreviousDate(date: string) {
-  return shiftDate(date, -1);
-}
-
-function getNextDate(date: string) {
-  return shiftDate(date, 1);
+function getMealColor(index: number) {
+  const colors = ["#F2C94C", "#94B857", "#E8455F", "#6E7CA6", "#D69B3F"];
+  return colors[index % colors.length];
 }
 
 export default function JournalPage() {
@@ -63,7 +47,6 @@ export default function JournalPage() {
   const [message, setMessage] = useState("");
 
   const meals = getMealsByDate(date);
-
   const totals = useMemo(() => calculateDayTotals(meals), [meals]);
 
   const calories = toNumber(totals.calories);
@@ -72,10 +55,13 @@ export default function JournalPage() {
   const fat = toNumber(totals.fatG);
 
   const caloriePercent = getPercent(calories, goals.calories);
+  const proteinPercent = getPercent(protein, goals.proteinG);
+  const carbsPercent = getPercent(carbs, goals.carbsG);
+  const fatPercent = getPercent(fat, goals.fatG);
 
   function notify(text: string) {
     setMessage(text);
-    window.setTimeout(() => setMessage(""), 2500);
+    window.setTimeout(() => setMessage(""), 2400);
   }
 
   function handleDeleteMeal(meal: Meal) {
@@ -112,7 +98,7 @@ export default function JournalPage() {
   }
 
   function handleCopyYesterday() {
-    const sourceDate = getPreviousDate(date);
+    const sourceDate = shiftDate(date, -1);
     const copiedCount = copyDay(sourceDate, date);
 
     if (copiedCount === 0) {
@@ -125,179 +111,181 @@ export default function JournalPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl">
-        <PageHeader
-          eyebrow="Suivi quotidien"
-          title="Journal"
-          description="Retrouve les repas enregistrés sur la journée, vérifie les calories et ajuste facilement ce qui doit l’être."
-          action={
-            <PremiumCard className="p-4" tint="white">
-              <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-wide text-[#7A746E]">
-                  Date du journal
-                </span>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  className="input min-w-48"
-                />
-              </label>
-            </PremiumCard>
-          }
-        />
+      <div className="space-y-5">
+        <section className="pt-2">
+          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+            Suivi quotidien
+          </p>
 
-        <section className="mb-5 grid gap-4 md:grid-cols-4">
-          <StatCard
-            label="Calories"
-            value={formatMacro(totals.calories, " kcal")}
-            detail={`${goals.calories} kcal objectif`}
-          />
-          <StatCard
-            label="Protéines"
-            value={formatMacro(totals.proteinG, " g")}
-            detail={`${goals.proteinG} g objectif`}
-          />
-          <StatCard
-            label="Glucides"
-            value={formatMacro(totals.carbsG, " g")}
-            detail={`${goals.carbsG} g objectif`}
-          />
-          <StatCard
-            label="Lipides"
-            value={formatMacro(totals.fatG, " g")}
-            detail={`${goals.fatG} g objectif`}
-          />
+          <div className="mt-3 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="mt-display text-[52px] font-semibold leading-[0.9] tracking-[-0.055em] text-[var(--mt-ink)]">
+                Journal
+              </h1>
+              <p className="mt-4 max-w-[260px] text-[15px] leading-7 text-[var(--mt-ink-2)]">
+                Les repas de la journée, simplement regroupés et faciles à
+                ajuster.
+              </p>
+            </div>
+
+            <label className="mt-card shrink-0 rounded-[22px] p-3">
+              <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mt-ink-2)]">
+                Date
+              </span>
+              <input
+                type="date"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+                className="mt-2 w-[138px] rounded-[16px] border border-[var(--mt-line)] bg-[var(--mt-card-soft)] px-3 py-2 text-[13px] font-extrabold text-[var(--mt-ink)] outline-none"
+              />
+            </label>
+          </div>
         </section>
 
         {message && (
-          <div className="mb-5 rounded-[28px] bg-green-50 p-4 text-sm font-black text-green-800 ring-1 ring-green-100">
+          <div className="rounded-[18px] border border-[var(--mt-success-soft)] bg-[var(--mt-success-soft)] px-4 py-3 text-[13px] font-extrabold text-[var(--mt-success)]">
             {message}
           </div>
         )}
 
-        <section className="mb-5 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-          <PremiumCard tint="white">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <section className="mt-card overflow-hidden rounded-[28px]">
+          <div className="bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-black text-[#E94B4B]">
+                <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/68">
                   {formatDateFr(date)}
                 </p>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-[#171717] md:text-4xl">
+                <h2 className="mt-display mt-2 text-[34px] font-semibold leading-none tracking-[-0.04em]">
                   {meals.length === 0
                     ? "Journée vide"
-                    : `${meals.length} repas enregistré(s)`}
+                    : `${meals.length} repas`}
                 </h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-[#7A746E]">
-                  {meals.length === 0
-                    ? "Ajoute un repas ou copie la journée précédente pour aller plus vite."
-                    : "Tu peux dupliquer, supprimer ou transformer un repas en repas type."}
+              </div>
+
+              <div className="rounded-full bg-white/18 px-3 py-2 text-center backdrop-blur">
+                <p className="text-[22px] font-black leading-none">
+                  {caloriePercent}%
+                </p>
+                <p className="mt-1 text-[9px] font-black uppercase text-white/66">
+                  calories
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-end gap-2">
+                <p className="mt-display text-[56px] font-semibold leading-[0.82] tracking-[-0.06em]">
+                  {calories}
+                </p>
+                <p className="mb-1 text-[15px] font-bold text-white/72">
+                  / {goals.calories} kcal
                 </p>
               </div>
 
-              <ProgressBubble percent={caloriePercent} />
+              <div className="mt-4 h-[9px] overflow-hidden rounded-full bg-white/22">
+                <div
+                  className="h-full rounded-full bg-white shadow-[0_0_14px_rgba(255,255,255,0.5)]"
+                  style={{ width: `${caloriePercent}%` }}
+                />
+              </div>
             </div>
 
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              <MacroProgress
-                label="Protéines"
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <MacroGlass
+                label="Prot."
                 value={protein}
                 target={goals.proteinG}
-                color="#7DD3FC"
+                percent={proteinPercent}
               />
-              <MacroProgress
-                label="Glucides"
+              <MacroGlass
+                label="Gluc."
                 value={carbs}
                 target={goals.carbsG}
-                color="#F6C766"
+                percent={carbsPercent}
               />
-              <MacroProgress
-                label="Lipides"
+              <MacroGlass
+                label="Lip."
                 value={fat}
                 target={goals.fatG}
-                color="#E94B4B"
+                percent={fatPercent}
               />
             </div>
-          </PremiumCard>
-
-          <PremiumCard tint="red">
-            <p className="text-sm font-black text-white/70">Actions rapides</p>
-            <h2 className="mt-3 text-3xl font-black tracking-[-0.04em]">
-              Gagne du temps.
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-white/82">
-              Utilise les repas types, copie la veille ou ajoute un repas
-              manuellement selon la journée.
-            </p>
-
-            <div className="mt-6 grid gap-3">
-              <Link
-                href="/add"
-                className="rounded-full bg-white px-5 py-3 text-center text-sm font-black text-[#171717] shadow-[0_18px_34px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:bg-[#FFF2EE]"
-              >
-                Ajouter un repas
-              </Link>
-
-              <Link
-                href="/recipes"
-                className="rounded-full bg-white/16 px-5 py-3 text-center text-sm font-black text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/22"
-              >
-                Utiliser un repas type
-              </Link>
-
-              <button
-                type="button"
-                onClick={handleCopyYesterday}
-                className="rounded-full bg-white/16 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/22"
-              >
-                Copier la veille
-              </button>
-            </div>
-          </PremiumCard>
+          </div>
         </section>
 
-        <section className="mb-5 flex flex-wrap gap-2">
-          <GhostButton onClick={() => setDate(getPreviousDate(date))}>
-            ← Jour précédent
-          </GhostButton>
+        <section className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setDate(shiftDate(date, -1))}
+            className="rounded-[18px] bg-white px-3 py-3 text-[12px] font-black text-[var(--mt-ink)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
+          >
+            ← Veille
+          </button>
 
-          <SoftButton onClick={() => setDate(todayLocalDate())}>
+          <button
+            type="button"
+            onClick={() => setDate(todayLocalDate())}
+            className="rounded-[18px] bg-[var(--mt-rouge-wash)] px-3 py-3 text-[12px] font-black text-[var(--mt-rouge-deep)] ring-1 ring-[var(--mt-rouge-soft)]"
+          >
             Aujourd’hui
-          </SoftButton>
+          </button>
 
-          <GhostButton onClick={() => setDate(getNextDate(date))}>
-            Jour suivant →
-          </GhostButton>
+          <button
+            type="button"
+            onClick={() => setDate(shiftDate(date, 1))}
+            className="rounded-[18px] bg-white px-3 py-3 text-[12px] font-black text-[var(--mt-ink)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
+          >
+            Demain →
+          </button>
         </section>
 
-        <PremiumCard tint="white">
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
-            <SectionTitle
-              title="Repas de la journée"
-              text="Chaque repas reste modifiable indirectement : supprime-le, duplique-le ou recrée une version ajustée."
-            />
+        <section className="mt-card rounded-[28px] p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="mt-display text-[24px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
+                Repas du jour
+              </h2>
+              <p className="mt-1 text-[13px] leading-5 text-[var(--mt-ink-2)]">
+                Timeline de la journée.
+              </p>
+            </div>
 
-            <PrimaryButton href="/add">Ajouter</PrimaryButton>
+            <Link
+              href="/add"
+              className="rounded-full bg-[var(--mt-rouge)] px-4 py-2 text-[12px] font-black text-white shadow-[var(--mt-shadow-red)]"
+            >
+              Ajouter
+            </Link>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-5">
             {meals.length === 0 ? (
-              <EmptyState
-                title="Aucun repas sur cette journée"
-                text="Ajoute un repas, utilise un repas type ou copie la veille si cette journée ressemble à la précédente."
-                action={
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <PrimaryButton href="/add">Ajouter un repas</PrimaryButton>
-                    <SoftButton href="/recipes">Voir les repas types</SoftButton>
-                  </div>
-                }
-              />
+              <div className="rounded-[22px] border border-dashed border-[var(--mt-line-2)] bg-[var(--mt-card-soft)] p-5 text-center">
+                <p className="mt-display text-[21px] font-semibold text-[var(--mt-ink)]">
+                  Aucun repas
+                </p>
+                <p className="mt-2 text-[13px] leading-6 text-[var(--mt-ink-2)]">
+                  Ajoute un repas, utilise un repas type ou copie la veille.
+                </p>
+
+                <div className="mt-4 grid gap-2">
+                  <Link href="/add" className="mt-btn-primary">
+                    Ajouter un repas
+                  </Link>
+                  <Link href="/recipes" className="mt-btn-soft text-center">
+                    Voir les repas types
+                  </Link>
+                </div>
+              </div>
             ) : (
-              <div className="grid gap-5 xl:grid-cols-2">
-                {meals.map((meal) => (
-                  <MealCard
+              <div className="relative space-y-3">
+                <div className="absolute bottom-5 left-[23px] top-5 w-px bg-[var(--mt-line-2)]" />
+
+                {meals.map((meal, index) => (
+                  <MealTimelineCard
                     key={meal.id}
                     meal={meal}
+                    index={index}
                     onDuplicate={() => handleDuplicateMeal(meal)}
                     onSaveAsTemplate={() => handleSaveAsTemplate(meal)}
                     onDelete={() => handleDeleteMeal(meal)}
@@ -306,121 +294,165 @@ export default function JournalPage() {
               </div>
             )}
           </div>
-        </PremiumCard>
+        </section>
+
+        <section className="mt-card rounded-[28px] p-5">
+          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+            Actions rapides
+          </p>
+
+          <div className="mt-4 grid gap-2">
+            <Link href="/add" className="JournalAction">
+              <span>Ajouter un repas</span>
+              <span>→</span>
+            </Link>
+
+            <Link href="/recipes" className="JournalAction">
+              <span>Utiliser un repas type</span>
+              <span>→</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleCopyYesterday}
+              className="JournalAction text-left"
+            >
+              <span>Copier la veille</span>
+              <span>→</span>
+            </button>
+          </div>
+        </section>
+
+        <div className="h-10" />
       </div>
     </AppShell>
   );
 }
 
-function ProgressBubble({ percent }: { percent: number }) {
-  const displayedPercent = Math.min(120, Math.max(0, percent));
-
-  return (
-    <div className="flex h-36 w-36 shrink-0 flex-col items-center justify-center rounded-full bg-[#FFE1DD] shadow-[inset_0_0_0_14px_rgba(233,75,75,0.14)]">
-      <p className="text-4xl font-black tracking-[-0.04em] text-[#B92D35]">
-        {displayedPercent}%
-      </p>
-      <p className="mt-1 text-xs font-black text-[#B92D35]/70">calories</p>
-    </div>
-  );
-}
-
-function MacroProgress({
+function MacroGlass({
   label,
   value,
   target,
-  color,
+  percent,
 }: {
   label: string;
   value: number;
   target: number;
-  color: string;
+  percent: number;
 }) {
-  const percent = Math.min(100, getPercent(value, target));
-
   return (
-    <div className="rounded-[26px] bg-[#FFFAF5] p-4 ring-1 ring-black/[0.055]">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-sm font-black text-[#171717]">{label}</p>
-        <p className="text-sm text-[#7A746E]">
-          <span className="font-black text-[#171717]">{value}</span> / {target} g
-        </p>
-      </div>
-
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/5">
+    <div className="rounded-[18px] border border-white/18 bg-white/14 p-3 backdrop-blur">
+      <p className="text-[10.5px] font-bold text-white/72">{label}</p>
+      <p className="mt-1 font-[var(--mt-display)] text-[20px] font-semibold leading-none">
+        {value}
+        <span className="font-[var(--mt-sans)] text-[10px] text-white/60">
+          /{target}
+        </span>
+      </p>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/22">
         <div
-          className="h-full rounded-full"
-          style={{ width: `${percent}%`, backgroundColor: color }}
+          className="h-full rounded-full bg-white"
+          style={{ width: `${percent}%` }}
         />
       </div>
     </div>
   );
 }
 
-function MealCard({
+function MealTimelineCard({
   meal,
+  index,
   onDuplicate,
   onSaveAsTemplate,
   onDelete,
 }: {
   meal: Meal;
+  index: number;
   onDuplicate: () => void;
   onSaveAsTemplate: () => void;
   onDelete: () => void;
 }) {
   const totals = calculateDayTotals([meal]);
+  const color = getMealColor(index);
 
   return (
-    <PremiumMealCard
-      eyebrow={`${mealTypeLabels[meal.type]} · ${meal.items.length} aliment(s)`}
-      title={meal.name || mealTypeLabels[meal.type]}
-      description="Repas enregistré dans le journal. Tu peux le dupliquer, l’enregistrer comme repas type ou le supprimer."
-      badges={[
-        {
-          label: mealTypeLabels[meal.type],
-          tone: "red",
-        },
-      ]}
-      totals={{
-        calories: totals.calories,
-        proteinG: totals.proteinG,
-        carbsG: totals.carbsG,
-        fatG: totals.fatG,
-      }}
-      items={meal.items.map((item) => ({
-        id: item.id,
-        name: item.foodNameSnapshot,
-        quantityG: item.quantityG,
-        calories: item.calories,
-        proteinG: item.proteinG,
-      }))}
-      actions={[
-        {
-          label: "Dupliquer",
-          tone: "ghost",
-          onClick: onDuplicate,
-        },
-        {
-          label: "En repas type",
-          tone: "soft",
-          onClick: onSaveAsTemplate,
-        },
-        {
-          label: "Supprimer",
-          tone: "danger",
-          onClick: onDelete,
-        },
-      ]}
-      maxItems={5}
-    />
-  );
-}
+    <article className="relative flex gap-3">
+      <div
+        className="relative z-10 mt-4 h-12 w-12 shrink-0 rounded-[16px] shadow-[var(--mt-shadow-sm)]"
+        style={{ background: color }}
+      />
 
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/[0.055]">
-      <p className="text-xs font-bold text-[#7A746E]">{label}</p>
-      <p className="mt-1 font-black text-[#171717]">{value}</p>
-    </div>
+      <div className="min-w-0 flex-1 rounded-[22px] border border-[var(--mt-line)] bg-white p-4 shadow-[var(--mt-shadow)]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-rouge)]">
+              {mealTypeLabels[meal.type]}
+            </p>
+            <h3 className="mt-1 truncate text-[17px] font-black tracking-[-0.02em] text-[var(--mt-ink)]">
+              {meal.name || mealTypeLabels[meal.type]}
+            </h3>
+            <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-3)]">
+              {meal.items.length} aliment(s)
+            </p>
+          </div>
+
+          <div className="text-right">
+            <p className="mt-display text-[26px] font-semibold leading-none tracking-[-0.03em] text-[var(--mt-ink)]">
+              {formatMacro(totals.calories, "")}
+            </p>
+            <p className="mt-1 text-[9px] font-black uppercase tracking-[0.08em] text-[var(--mt-ink-3)]">
+              kcal
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2 text-[12px] font-bold text-[var(--mt-ink-2)]">
+          <span>
+            <b className="text-[var(--mt-ink)]">
+              {formatMacro(totals.proteinG, "g")}
+            </b>{" "}
+            P
+          </span>
+          <span>
+            <b className="text-[var(--mt-ink)]">
+              {formatMacro(totals.carbsG, "g")}
+            </b>{" "}
+            G
+          </span>
+          <span>
+            <b className="text-[var(--mt-ink)]">
+              {formatMacro(totals.fatG, "g")}
+            </b>{" "}
+            L
+          </span>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="rounded-full bg-[var(--mt-card-soft)] px-3 py-2 text-[11px] font-black text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
+          >
+            Dupliquer
+          </button>
+
+          <button
+            type="button"
+            onClick={onSaveAsTemplate}
+            className="rounded-full bg-[var(--mt-rouge-wash)] px-3 py-2 text-[11px] font-black text-[var(--mt-rouge-deep)] ring-1 ring-[var(--mt-rouge-soft)]"
+          >
+            En type
+          </button>
+
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded-full bg-white px-3 py-2 text-[11px] font-black text-[var(--mt-rouge-deep)] ring-1 ring-[var(--mt-rouge-soft)]"
+          >
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </article>
   );
 }

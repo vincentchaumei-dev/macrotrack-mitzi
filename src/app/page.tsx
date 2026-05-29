@@ -8,12 +8,12 @@ import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   calculateDayTotals,
   calculateTdee,
-  formatDateFr,
   formatMacro,
   goalTypeLabels,
   mealTypeLabels,
   todayLocalDate,
 } from "@/lib/nutrition";
+import { Meal } from "@/types/nutrition";
 
 function toNumber(value: number | null | undefined) {
   return typeof value === "number" ? value : 0;
@@ -21,64 +21,93 @@ function toNumber(value: number | null | undefined) {
 
 function getPercent(value: number, target: number) {
   if (target <= 0) return 0;
-  return Math.min(140, Math.round((value / target) * 100));
+  return Math.min(100, Math.round((value / target) * 100));
 }
 
-function getCoachMessage({
-  calories,
-  target,
+function formatWeekDay(date: Date) {
+  return new Intl.DateTimeFormat("fr-FR", { weekday: "short" })
+    .format(date)
+    .slice(0, 1)
+    .toUpperCase();
+}
+
+function getWeekDays(today: string) {
+  const base = new Date(`${today}T12:00:00`);
+  const day = base.getDay() === 0 ? 7 : base.getDay();
+  const monday = new Date(base);
+  monday.setDate(base.getDate() - day + 1);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const current = new Date(monday);
+    current.setDate(monday.getDate() + index);
+
+    return {
+      label: formatWeekDay(current),
+      number: String(current.getDate()).padStart(2, "0"),
+      date: current.toISOString().slice(0, 10),
+      active: current.toISOString().slice(0, 10) === today,
+    };
+  });
+}
+
+function getMealGradient(index: number) {
+  const gradients = [
+    "linear-gradient(140deg,#F2C94C,#E8A23D)",
+    "linear-gradient(140deg,#A8C66C,#6E9B3E)",
+    "linear-gradient(140deg,#E8455F,#B5304B)",
+    "linear-gradient(140deg,#6E7CA6,#39446F)",
+  ];
+
+  return gradients[index % gradients.length];
+}
+
+function getCoachText({
+  caloriesRemaining,
   protein,
   proteinTarget,
 }: {
-  calories: number;
-  target: number;
+  caloriesRemaining: number;
   protein: number;
   proteinTarget: number;
 }) {
-  const caloriePercent = getPercent(calories, target);
-  const proteinPercent = getPercent(protein, proteinTarget);
+  const proteinRemaining = Math.max(0, proteinTarget - protein);
 
-  if (calories === 0) {
-    return {
-      title: "On commence doucement.",
-      text: "Ajoute un premier repas pour lancer la journée. L’objectif, c’est de comprendre, pas de se mettre la pression.",
-    };
+  if (caloriesRemaining > 0) {
+    return (
+      <>
+        Il te reste <b>{caloriesRemaining} kcal</b>
+        {proteinRemaining > 0 ? (
+          <>
+            {" "}
+            et <b>{proteinRemaining} g de protéines</b>
+          </>
+        ) : null}{" "}
+        pour atteindre ton objectif. Belle journée jusqu’ici.
+      </>
+    );
   }
 
-  if (proteinPercent < 50 && caloriePercent > 45) {
-    return {
-      title: "Pense aux protéines.",
-      text: "Tu avances bien, mais les protéines sont encore basses. Un œuf, du fromage blanc, du thon ou du poulet peuvent aider simplement.",
-    };
-  }
-
-  if (caloriePercent < 65) {
-    return {
-      title: "Belle marge aujourd’hui.",
-      text: "Tu as encore de la place sur les calories. Continue avec des repas simples, rassasiants et faciles à suivre.",
-    };
-  }
-
-  if (caloriePercent <= 100) {
-    return {
-      title: "Journée bien cadrée.",
-      text: "Tu es dans une zone cohérente. Le plus important reste la tendance sur plusieurs jours.",
-    };
-  }
-
-  return {
-    title: "Un peu au-dessus, rien de grave.",
-    text: "Une journée isolée ne veut pas tout dire. On regarde surtout la moyenne sur la semaine.",
-  };
+  return (
+    <>
+      Tu es légèrement au-dessus de l’objectif. Rien de grave : on regarde
+      surtout la <b>tendance</b>, pas une journée isolée.
+    </>
+  );
 }
 
 export default function Home() {
   const router = useRouter();
 
-  const { profile, goals, getMealsByDate, hasLoaded, onboardingCompleted } =
-    useNutritionStore();
+  const {
+    profile,
+    goals,
+    getMealsByDate,
+    hasLoaded,
+    onboardingCompleted,
+  } = useNutritionStore();
 
   const today = todayLocalDate();
+  const weekDays = useMemo(() => getWeekDays(today), [today]);
   const meals = getMealsByDate(today);
   const totals = calculateDayTotals(meals);
 
@@ -87,25 +116,14 @@ export default function Home() {
   const carbs = toNumber(totals.carbsG);
   const fat = toNumber(totals.fatG);
 
-  const calorieTarget = goals.calories;
-  const proteinTarget = goals.proteinG;
-  const carbsTarget = goals.carbsG;
-  const fatTarget = goals.fatG;
+  const caloriesRemaining = goals.calories - calories;
 
-  const caloriesRemaining = calorieTarget - calories;
-  const caloriePercent = getPercent(calories, calorieTarget);
+  const caloriePercent = getPercent(calories, goals.calories);
+  const proteinPercent = getPercent(protein, goals.proteinG);
+  const carbsPercent = getPercent(carbs, goals.carbsG);
+  const fatPercent = getPercent(fat, goals.fatG);
+
   const tdee = calculateTdee(profile);
-
-  const coach = useMemo(
-    () =>
-      getCoachMessage({
-        calories,
-        target: calorieTarget,
-        protein,
-        proteinTarget,
-      }),
-    [calories, calorieTarget, protein, proteinTarget]
-  );
 
   useEffect(() => {
     if (hasLoaded && !onboardingCompleted) {
@@ -116,8 +134,10 @@ export default function Home() {
   if (!hasLoaded || !onboardingCompleted) {
     return (
       <AppShell>
-        <div className="flex min-h-[50vh] items-center justify-center">
-          <p className="text-sm text-[#7A746E]">Chargement...</p>
+        <div className="grid min-h-[100svh] place-items-center">
+          <p className="text-sm font-bold text-[var(--mt-ink-2)]">
+            Chargement...
+          </p>
         </div>
       </AppShell>
     );
@@ -125,364 +145,242 @@ export default function Home() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-start">
-          <div>
-            <p className="text-sm font-bold text-[#E94B4B]">
-              {formatDateFr(today)}
-            </p>
-            <h1 className="mt-2 text-4xl font-black tracking-tight text-[#171717] md:text-5xl">
-              Dashboard nutrition
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#7A746E] md:text-base">
-              Objectif actuel : {goalTypeLabels[profile.goalType]} · dépense
-              journalière estimée : {tdee} kcal.
-            </p>
-          </div>
-
-          <Link
-            href="/add"
-            className="w-fit rounded-full bg-[#E94B4B] px-5 py-3 text-sm font-bold text-white shadow-[0_18px_32px_rgba(233,75,75,0.24)] transition hover:bg-[#B92D35]"
-          >
-            Ajouter un repas
-          </Link>
-        </header>
-
-        <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-          <div
-            className="overflow-hidden rounded-[42px] p-6 md:p-8"
-            style={{
-              background:
-                "linear-gradient(180deg, #FFFFFF 0%, #FFF8F5 100%)",
-              boxShadow: "0 24px 60px rgba(28, 21, 18, 0.09)",
-              border: "1px solid rgba(23,23,23,0.06)",
-            }}
-          >
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-sm font-bold text-[#7A746E]">
-                  Calories restantes
-                </p>
-
-                <div className="mt-3 flex items-end gap-2">
-                  <p className="text-7xl font-black tracking-tight text-[#171717]">
-                    {Math.max(0, caloriesRemaining)}
-                  </p>
-                  <p className="mb-3 text-xl font-bold text-[#7A746E]">kcal</p>
+      <div className="min-h-[100svh] bg-[var(--mt-bg)]">
+        <section className="mt-immersive">
+          <div className="mt-immersive-inner">
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-3">
+                <div className="grid h-[42px] w-[42px] place-items-center rounded-[14px] border border-white/25 bg-white/20 font-[var(--mt-display)] text-lg font-semibold text-white backdrop-blur">
+                  M
                 </div>
 
-                <p className="mt-3 text-sm leading-6 text-[#7A746E]">
-                  {calories} kcal consommées sur {calorieTarget} kcal.
-                </p>
-
-                {caloriesRemaining < 0 && (
-                  <p className="mt-4 rounded-[24px] bg-[#FFE1DD] px-4 py-3 text-sm font-semibold text-[#B92D35]">
-                    +{Math.abs(caloriesRemaining)} kcal au-dessus de l’objectif.
-                    Pas grave, on regarde surtout la moyenne.
+                <div>
+                  <p className="text-[11.5px] font-semibold text-white/75">
+                    Bonjour,
                   </p>
-                )}
+                  <p className="font-[var(--mt-display)] text-[18px] font-semibold leading-none tracking-[-0.02em] text-white">
+                    MacroTrack
+                  </p>
+                </div>
               </div>
 
-              <ProgressRing percent={caloriePercent} label={`${caloriePercent}%`} />
+              <div className="flex gap-2">
+                <Link
+                  href="/goals"
+                  className="grid h-10 w-10 place-items-center rounded-[13px] border border-white/20 bg-white/16 text-white backdrop-blur"
+                >
+                  <SettingsIcon />
+                </Link>
+                <button
+                  type="button"
+                  className="relative grid h-10 w-10 place-items-center rounded-[13px] border border-white/20 bg-white/16 text-white backdrop-blur"
+                >
+                  <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-white" />
+                  <BellIcon />
+                </button>
+              </div>
             </div>
 
-            <div className="mt-8 grid gap-3 md:grid-cols-3">
-              <MacroBar
+            <div className="mt-week">
+              {weekDays.map((day) => (
+                <div
+                  key={day.date}
+                  className={`mt-week-day ${day.active ? "mt-week-active" : ""}`}
+                >
+                  <div className="mt-week-label">{day.label}</div>
+                  <div className="mt-week-num">{day.number}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-big-cal">
+              <div className="mt-big-cal-number">
+                {Math.max(0, caloriesRemaining)}
+              </div>
+              <div className="mt-big-cal-label">
+                kcal restantes · <b>{calories}</b> / {goals.calories} consommées
+              </div>
+            </div>
+
+            <div className="mt-progress-line">
+              <i style={{ width: `${caloriePercent}%` }} />
+            </div>
+
+            <div className="mt-immersive-macros">
+              <MacroGlass
                 label="Protéines"
                 value={protein}
-                target={proteinTarget}
-                suffix="g"
-                color="#7DD3FC"
+                target={goals.proteinG}
+                percent={proteinPercent}
               />
-              <MacroBar
+              <MacroGlass
                 label="Glucides"
                 value={carbs}
-                target={carbsTarget}
-                suffix="g"
-                color="#F6C766"
+                target={goals.carbsG}
+                percent={carbsPercent}
               />
-              <MacroBar
+              <MacroGlass
                 label="Lipides"
                 value={fat}
-                target={fatTarget}
-                suffix="g"
-                color="#E94B4B"
+                target={goals.fatG}
+                percent={fatPercent}
               />
             </div>
           </div>
+        </section>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1">
-            <div
-              className="rounded-[38px] p-6 text-white"
-              style={{
-                background: "linear-gradient(135deg, #E94B4B 0%, #B92D35 100%)",
-                boxShadow: "0 24px 60px rgba(233,75,75,0.28)",
-              }}
-            >
-              <p className="text-sm font-semibold text-white/70">
-                Coach nutrition
+        <section className="mt-sheet">
+          <div className="mt-sheet-grip" />
+
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+                {goalTypeLabels[profile.goalType]} · TDEE {tdee} kcal
               </p>
-              <h2 className="mt-3 text-2xl font-black tracking-tight">
-                {coach.title}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-white/85">
-                {coach.text}
-              </p>
+              <h1 className="mt-display mt-1 text-[24px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
+                Aujourd’hui
+              </h1>
             </div>
 
-            <div
-              className="rounded-[38px] bg-white p-6"
-              style={{
-                boxShadow: "0 18px 44px rgba(28, 21, 18, 0.07)",
-                border: "1px solid rgba(23,23,23,0.06)",
-              }}
-            >
-              <p className="text-sm font-bold text-[#E94B4B]">Conseil simple</p>
-              <p className="mt-3 text-sm leading-6 text-[#7A746E]">
-                Pour progresser sans pression, vise surtout la régularité :
-                assez de protéines, des repas rassasiants, et une moyenne
-                cohérente sur plusieurs jours.
-              </p>
-            </div>
+            <Link href="/journal" className="text-[12.5px] font-extrabold text-[var(--mt-rouge)]">
+              Tout voir
+            </Link>
           </div>
-        </section>
 
-        <section className="mt-5 grid gap-4 md:grid-cols-3">
-          <SmallStat
-            label="Dépense estimée"
-            value={`${tdee} kcal`}
-            text="Estimation selon le profil et l’activité."
-          />
-          <SmallStat
-            label="Objectif calories"
-            value={`${calorieTarget} kcal`}
-            text="Modifiable dans la page Objectifs."
-          />
-          <SmallStat
-            label="Repas aujourd’hui"
-            value={`${meals.length}`}
-            text="Repas enregistrés sur la journée."
-          />
-        </section>
+          <div className="mt-section-head">
+            <h2>Repas du jour</h2>
+            <Link href="/add">Ajouter</Link>
+          </div>
 
-        <section className="mt-5 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          <div
-            className="rounded-[42px] bg-white p-6"
-            style={{
-              boxShadow: "0 18px 44px rgba(28, 21, 18, 0.07)",
-              border: "1px solid rgba(23,23,23,0.06)",
-            }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-black tracking-tight text-[#171717]">
-                  Repas du jour
-                </h2>
-                <p className="mt-1 text-sm text-[#7A746E]">
-                  {meals.length === 0
-                    ? "Aucun repas enregistré aujourd’hui."
-                    : `${meals.length} repas enregistré(s).`}
-                </p>
+          {meals.length === 0 ? (
+            <div className="mt-card mb-4 p-5 text-center">
+              <p className="mt-display text-xl font-semibold text-[var(--mt-ink)]">
+                Aucun repas enregistré
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--mt-ink-2)]">
+                Ajoute un repas ou utilise un repas type pour commencer la
+                journée simplement.
+              </p>
+              <div className="mt-4 grid gap-2">
+                <Link href="/add" className="mt-btn-primary">
+                  Ajouter un repas
+                </Link>
+                <Link href="/recipes" className="mt-btn-soft text-center">
+                  Voir les repas types
+                </Link>
               </div>
-
-              <Link
-                href="/add"
-                className="rounded-full bg-[#E94B4B] px-4 py-2 text-sm font-bold text-white shadow-lg shadow-red-100"
-              >
-                Ajouter
-              </Link>
             </div>
+          ) : (
+            meals.map((meal, index) => (
+              <MealRow key={meal.id} meal={meal} index={index} />
+            ))
+          )}
 
-            <div className="mt-5 space-y-3">
-              {meals.length === 0 ? (
-                <div className="rounded-[32px] border border-dashed border-black/10 bg-[#FFFAF5] p-8 text-center">
-                  <p className="font-bold">Commence avec un repas simple</p>
-                  <p className="mt-2 text-sm leading-6 text-[#7A746E]">
-                    Tu peux ajouter un repas manuellement ou utiliser un repas
-                    type déjà prêt.
-                  </p>
-
-                  <div className="mt-5 flex flex-wrap justify-center gap-2">
-                    <Link
-                      href="/add"
-                      className="rounded-full bg-[#E94B4B] px-5 py-3 text-sm font-bold text-white"
-                    >
-                      Ajouter un repas
-                    </Link>
-                    <Link
-                      href="/recipes"
-                      className="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-bold text-[#171717]"
-                    >
-                      Voir les repas types
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                meals.map((meal) => {
-                  const mealTotals = calculateDayTotals([meal]);
-
-                  return (
-                    <div
-                      key={meal.id}
-                      className="rounded-[30px] bg-[#FFFAF5] p-4 ring-1 ring-black/5"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-bold text-[#171717]">
-                            {meal.name || mealTypeLabels[meal.type]}
-                          </p>
-                          <p className="mt-1 text-sm text-[#7A746E]">
-                            {meal.items.length} aliment(s)
-                          </p>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="font-black text-[#171717]">
-                            {formatMacro(mealTotals.calories, " kcal")}
-                          </p>
-                          <p className="mt-1 text-xs text-[#7A746E]">
-                            {formatMacro(mealTotals.proteinG, " g")} prot.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+          <div className="mt-insight">
+            <div className="mt-insight-icon">
+              <LightIcon />
             </div>
+            <p>
+              {getCoachText({
+                caloriesRemaining,
+                protein,
+                proteinTarget: goals.proteinG,
+              })}
+            </p>
           </div>
 
-          <div
-            className="rounded-[42px] bg-white p-6"
-            style={{
-              boxShadow: "0 18px 44px rgba(28, 21, 18, 0.07)",
-              border: "1px solid rgba(23,23,23,0.06)",
-            }}
-          >
-            <h2 className="text-2xl font-black tracking-tight text-[#171717]">
-              Raccourcis
-            </h2>
-
-            <div className="mt-5 grid gap-3">
-              <QuickLink href="/recipes" label="Ajouter un repas type" />
-              <QuickLink href="/import" label="Scanner ou importer un produit" />
-              <QuickLink href="/weight" label="Suivre le poids" />
-              <QuickLink href="/analytics" label="Voir l’analyse" />
-            </div>
-          </div>
+          <div className="h-20" />
         </section>
       </div>
     </AppShell>
   );
 }
 
-function ProgressRing({ percent, label }: { percent: number; label: string }) {
-  const radius = 58;
-  const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(100, Math.max(0, percent));
-  const dashOffset = circumference - (progress / 100) * circumference;
-
-  return (
-    <div className="relative flex h-48 w-48 shrink-0 items-center justify-center">
-      <svg className="h-full w-full -rotate-90" viewBox="0 0 140 140">
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          stroke="#FFE1DD"
-          strokeWidth="14"
-          fill="none"
-        />
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          stroke="#E94B4B"
-          strokeWidth="14"
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashOffset}
-        />
-      </svg>
-
-      <div className="absolute text-center">
-        <p className="text-4xl font-black text-[#171717]">{label}</p>
-        <p className="mt-1 text-xs font-bold text-[#7A746E]">complété</p>
-      </div>
-    </div>
-  );
-}
-
-function MacroBar({
+function MacroGlass({
   label,
   value,
   target,
-  suffix,
-  color,
+  percent,
 }: {
   label: string;
   value: number;
   target: number;
-  suffix: string;
-  color: string;
-}) {
-  const percent = Math.min(100, getPercent(value, target));
-
-  return (
-    <div className="rounded-[28px] bg-[#FFFAF5] p-4 ring-1 ring-black/5">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-sm font-bold text-[#171717]">{label}</p>
-        <p className="text-sm text-[#7A746E]">
-          <span className="font-black text-[#171717]">{value}</span> / {target}{" "}
-          {suffix}
-        </p>
-      </div>
-
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/5">
-        <div
-          className="h-full rounded-full"
-          style={{ width: `${percent}%`, backgroundColor: color }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function SmallStat({
-  label,
-  value,
-  text,
-}: {
-  label: string;
-  value: string;
-  text: string;
+  percent: number;
 }) {
   return (
-    <div
-      className="rounded-[34px] bg-white p-5"
-      style={{
-        boxShadow: "0 16px 38px rgba(28, 21, 18, 0.06)",
-        border: "1px solid rgba(23,23,23,0.06)",
-      }}
-    >
-      <p className="text-sm font-semibold text-[#7A746E]">{label}</p>
-      <p className="mt-2 text-3xl font-black tracking-tight text-[#171717]">
+    <div className="mt-immersive-macro">
+      <div className="mt-immersive-macro-label">{label}</div>
+      <div className="mt-immersive-macro-value">
         {value}
-      </p>
-      <p className="mt-2 text-sm leading-5 text-[#7A746E]">{text}</p>
+        <small>/{target}g</small>
+      </div>
+      <div className="mt-mini-bar">
+        <i style={{ width: `${percent}%` }} />
+      </div>
     </div>
   );
 }
 
-function QuickLink({ href, label }: { href: string; label: string }) {
+function MealRow({ meal, index }: { meal: Meal; index: number }) {
+  const totals = calculateDayTotals([meal]);
+
   return (
-    <Link
-      href={href}
-      className="flex items-center justify-between rounded-[28px] bg-[#FFFAF5] px-4 py-4 text-sm font-bold text-[#171717] ring-1 ring-black/5 transition hover:bg-[#FFE1DD]"
-    >
-      <span>{label}</span>
-      <span className="text-[#E94B4B]">→</span>
+    <Link href="/journal" className="mt-meal-row">
+      <div
+        className="mt-meal-thumb"
+        style={{ background: getMealGradient(index) }}
+      />
+
+      <div className="mt-meal-info">
+        <div className="mt-meal-title">
+          {meal.name || mealTypeLabels[meal.type]}
+        </div>
+        <div className="mt-meal-sub">
+          <span>
+            <b>{formatMacro(totals.proteinG, "g")}</b> P
+          </span>
+          <span>
+            <b>{formatMacro(totals.carbsG, "g")}</b> G
+          </span>
+          <span>
+            <b>{formatMacro(totals.fatG, "g")}</b> L
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-meal-kcal">
+        <div className="mt-meal-kcal-number">
+          {formatMacro(totals.calories, "")}
+        </div>
+        <div className="mt-meal-kcal-unit">kcal</div>
+      </div>
     </Link>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.8 1.8 0 0 0 .36 2l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.8 1.8 0 0 0-2-.36 1.8 1.8 0 0 0-1 1.63V21a2 2 0 1 1-4 0v-.06a1.8 1.8 0 0 0-1-1.63 1.8 1.8 0 0 0-2 .36l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04a1.8 1.8 0 0 0 .36-2 1.8 1.8 0 0 0-1.63-1H3a2 2 0 1 1 0-4h.06a1.8 1.8 0 0 0 1.63-1 1.8 1.8 0 0 0-.36-2l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04a1.8 1.8 0 0 0 2 .36 1.8 1.8 0 0 0 1-1.63V3a2 2 0 1 1 4 0v.06a1.8 1.8 0 0 0 1 1.63 1.8 1.8 0 0 0 2-.36l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04a1.8 1.8 0 0 0-.36 2 1.8 1.8 0 0 0 1.63 1H21a2 2 0 1 1 0 4h-.06a1.8 1.8 0 0 0-1.54 1Z" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  );
+}
+
+function LightIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" />
+      <path d="M9 21h6" />
+    </svg>
   );
 }

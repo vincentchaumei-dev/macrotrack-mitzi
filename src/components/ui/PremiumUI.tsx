@@ -16,9 +16,9 @@ export function PageHeader({
     <header className="mb-9 flex flex-col justify-between gap-6 md:flex-row md:items-start">
       <div>
         <p className="text-sm font-black text-[#E94B4B]">{eyebrow}</p>
-        <h1 className="ui-page-title mt-3 max-w-4xl text-5xl font-black text-[#161412] md:text-7xl">
-          {title}
-        </h1>
+        <h1 className="ui-page-title mt-3 max-w-4xl font-black text-[#161412]">
+  {title}
+</h1>
         {description && (
           <p className="ui-page-text mt-5 max-w-2xl text-sm text-[#7A746E] md:text-base">
             {description}
@@ -41,11 +41,11 @@ export function PremiumCard({
   tint?: "white" | "cream" | "red" | "dark";
 }) {
   if (tint === "red") {
-    return <div className={`ui-red-card p-6 ${className}`}>{children}</div>;
+    return <div className={`ui-card p-5 sm:p-6 ${className}`}>{children}</div>;
   }
 
   if (tint === "cream") {
-    return <div className={`ui-card-soft p-6 ${className}`}>{children}</div>;
+    return <div className={`ui-card p-5 sm:p-6 ${className}`}>{children}</div>;
   }
 
   if (tint === "dark") {
@@ -56,7 +56,7 @@ export function PremiumCard({
     );
   }
 
-  return <div className={`ui-card p-6 ${className}`}>{children}</div>;
+  return <div className={`ui-card p-5 sm:p-6 ${className}`}>{children}</div>;
 }
 
 export function StatCard({
@@ -251,9 +251,9 @@ export function SectionTitle({
 }) {
   return (
     <div>
-      <h2 className="text-3xl font-black tracking-[-0.05em] text-[#171717]">
-        {title}
-      </h2>
+      <h2 className="ui-section-title font-black text-[#171717]">
+  {title}
+</h2>
       {text && <p className="mt-3 text-sm leading-7 text-[#7A746E]">{text}</p>}
     </div>
   );
