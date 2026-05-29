@@ -3,7 +3,11 @@
 import { FormEvent, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
-import { foodMatchesSearch, isFoodComplete } from "@/lib/nutrition";
+import {
+  compareFoodsForSearch,
+  foodMatchesSearch,
+  isFoodComplete,
+} from "@/lib/nutrition";
 import { Food, FoodSource } from "@/types/nutrition";
 
 const categories = [
@@ -103,7 +107,16 @@ function formToFoodInput(form: FoodFormState) {
     saltPer100g: parseNumber(form.salt),
     source: "manual" as FoodSource,
     verified: true,
+    dataQualityStatus: "complete" as const,
   };
+}
+
+function getSourceLabel(source: FoodSource) {
+  if (source === "ciqual") return "Ciqual";
+  if (source === "openfoodfacts") return "Open Food Facts";
+  if (source === "label") return "Étiquette";
+  if (source === "manual") return "Manuel";
+  return "Source inconnue";
 }
 
 export default function FoodsPage() {
@@ -120,11 +133,11 @@ export default function FoodsPage() {
 
   const filteredFoods = useMemo(() => {
     const hasQuery = query.trim().length > 0;
-  
+
     return foods
       .filter((food) => {
         const complete = isFoodComplete(food);
-  
+
         const matchesQuery =
           !hasQuery ||
           foodMatchesSearch({
@@ -133,28 +146,25 @@ export default function FoodsPage() {
             category: food.category,
             query,
           });
-  
+
         const matchesCategory =
           categoryFilter === "Toutes" || food.category === categoryFilter;
-  
+
         const matchesStatus =
           statusFilter === "Tous" ||
           (statusFilter === "Complets" && complete) ||
           (statusFilter === "À compléter" && !complete);
-  
+
         const matchesFavorite = !showOnlyFavorites || food.isFavorite;
-  
-        return matchesQuery && matchesCategory && matchesStatus && matchesFavorite;
+
+        return (
+          matchesQuery &&
+          matchesCategory &&
+          matchesStatus &&
+          matchesFavorite
+        );
       })
-      .sort((a, b) => {
-        if (a.isFavorite && !b.isFavorite) return -1;
-        if (!a.isFavorite && b.isFavorite) return 1;
-  
-        if (a.source !== "ciqual" && b.source === "ciqual") return -1;
-        if (a.source === "ciqual" && b.source !== "ciqual") return 1;
-  
-        return a.name.localeCompare(b.name);
-      })
+      .sort((a, b) => compareFoodsForSearch(a, b, query))
       .slice(0, hasQuery || showOnlyFavorites ? 80 : 30);
   }, [foods, query, categoryFilter, statusFilter, showOnlyFavorites]);
 
@@ -225,8 +235,8 @@ export default function FoodsPage() {
         <p className="text-sm font-medium text-[#E85A0C]">Base alimentaire</p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight">Aliments</h1>
         <p className="mt-2 max-w-3xl text-gray-500">
-          Gère les aliments, leurs portions et leurs valeurs nutritionnelles.
-          Une valeur vide reste inconnue : l’app ne la transforme jamais en zéro.
+          Recherche, ajoute et modifie les aliments. Les aliments simples et
+          bruts sont priorisés dans les résultats de recherche.
         </p>
       </div>
 
@@ -406,7 +416,9 @@ export default function FoodsPage() {
             </div>
 
             <button className="w-full rounded-2xl bg-[#10121A] px-5 py-3 text-sm font-medium text-white">
-              {editingFood ? "Enregistrer les modifications" : "Ajouter l’aliment"}
+              {editingFood
+                ? "Enregistrer les modifications"
+                : "Ajouter l’aliment"}
             </button>
           </div>
         </form>
@@ -416,7 +428,8 @@ export default function FoodsPage() {
             <div>
               <h2 className="text-xl font-semibold">Mes aliments</h2>
               <p className="mt-1 text-sm text-gray-500">
-              {filteredFoods.length} résultat(s) affiché(s). Affichage limité pour garder l’app rapide.
+                {filteredFoods.length} résultat(s) affiché(s). Les aliments
+                simples sont priorisés.
               </p>
             </div>
 
@@ -437,7 +450,7 @@ export default function FoodsPage() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="input"
-              placeholder="Rechercher un aliment, une marque..."
+              placeholder="Rechercher : œuf, poulet, riz, banane..."
             />
 
             <select
@@ -496,24 +509,28 @@ export default function FoodsPage() {
                               Favori
                             </span>
                           )}
-                        </div>
 
-                        <span className="rounded-full bg-white px-2 py-1 text-xs text-gray-600 ring-1 ring-black/5">
-  {food.source === "ciqual"
-    ? "Ciqual"
-    : food.source === "openfoodfacts"
-    ? "Open Food Facts"
-    : food.source === "label"
-    ? "Étiquette"
-    : food.source === "manual"
-    ? "Manuel"
-    : "Source inconnue"}
-</span>
+{food.isEssential && (
+  <span className="rounded-full bg-[#E85A0C] px-2 py-1 text-xs text-white">
+    Essentiel
+  </span>
+)}
+
+                          <span className="rounded-full bg-white px-2 py-1 text-xs text-gray-600 ring-1 ring-black/5">
+                            {getSourceLabel(food.source)}
+                          </span>
+                        </div>
 
                         <p className="mt-1 text-sm text-gray-500">
                           {food.brand ? `${food.brand} · ` : ""}
                           {food.category}
                         </p>
+
+                        {food.barcode && (
+                          <p className="mt-1 text-xs text-gray-400">
+                            Code-barres : {food.barcode}
+                          </p>
+                        )}
 
                         {food.servingName && food.servingSizeG && (
                           <p className="mt-1 text-sm text-gray-500">
@@ -543,6 +560,17 @@ export default function FoodsPage() {
                             suffix="g"
                           />
                         </div>
+
+                        {food.externalUrl && (
+                          <a
+                            href={food.externalUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-3 inline-block text-xs font-medium text-[#E85A0C]"
+                          >
+                            Voir la source
+                          </a>
+                        )}
                       </div>
 
                       <div className="flex shrink-0 flex-wrap gap-2 md:justify-end">
@@ -578,8 +606,6 @@ export default function FoodsPage() {
     </AppShell>
   );
 }
-
-
 
 function Field({
   label,

@@ -1,5 +1,6 @@
 import { Food } from "@/types/nutrition";
 import { ciqualFoods } from "@/data/ciqualFoods.generated";
+import { essentialFoods } from "@/data/essentialFoods";
 
 function now() {
   return new Date().toISOString();
@@ -14,6 +15,7 @@ const personalSeedFoods: Food[] = [
     servingName: "1 tranche",
     servingSizeG: 38.4,
     isFavorite: true,
+    isEssential: true,
     caloriesPer100g: 226,
     proteinPer100g: 10,
     carbsPer100g: 39,
@@ -36,6 +38,7 @@ const personalSeedFoods: Food[] = [
     servingName: "1 portion",
     servingSizeG: 25,
     isFavorite: true,
+    isEssential: true,
     caloriesPer100g: 85,
     proteinPer100g: 16,
     carbsPer100g: 4.5,
@@ -52,4 +55,8 @@ const personalSeedFoods: Food[] = [
   },
 ];
 
-export const seedFoods: Food[] = [...personalSeedFoods, ...ciqualFoods];
+export const seedFoods: Food[] = [
+  ...personalSeedFoods,
+  ...essentialFoods,
+  ...ciqualFoods,
+];

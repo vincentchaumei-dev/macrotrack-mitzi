@@ -6,7 +6,7 @@ export type FoodSource =
   | "unknown"
   | "openfoodfacts"
   | "ciqual";
-  
+
 export type Sex = "female" | "male";
 
 export type ActivityLevel =
@@ -46,6 +46,8 @@ export type Food = {
   servingName?: string;
   servingSizeG?: number | null;
   isFavorite?: boolean;
+  isEssential?: boolean;
+  officialName?: string;
 
   caloriesPer100g: number | null;
   proteinPer100g: number | null;

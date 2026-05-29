@@ -444,3 +444,187 @@ export function foodMatchesSearch({
 
   return queryWords.every((word) => searchableText.includes(word));
 }
+
+const simpleFoodCategories = [
+  "Fruits",
+  "Légumes",
+  "Légumineuses",
+  "Féculents & céréales",
+  "Viandes",
+  "Poissons",
+  "Œufs",
+  "Produits laitiers",
+  "Fromages",
+  "Matières grasses",
+  "Oléagineux & graines",
+];
+
+const processedFoodKeywords = [
+  "burger",
+  "sandwich",
+  "pizza",
+  "quiche",
+  "tarte",
+  "gateau",
+  "gâteau",
+  "biscuit",
+  "dessert",
+  "viennoiserie",
+  "croissant",
+  "pain au chocolat",
+  "restauration rapide",
+  "fast food",
+  "pané",
+  "pane",
+  "frit",
+  "frite",
+  "nugget",
+  "cordon bleu",
+  "sauce",
+  "plat prepare",
+  "plat préparé",
+  "industriel",
+  "snack",
+  "chips",
+  "bonbon",
+  "chocolat",
+  "glace",
+];
+
+const simplePreparationKeywords = [
+  "cru",
+  "cuit",
+  "cuite",
+  "bouilli",
+  "bouillie",
+  "vapeur",
+  "grille",
+  "grillé",
+  "rotî",
+  "rôti",
+  "poele",
+  "poêlé",
+  "nature",
+  "sans peau",
+  "filet",
+  "blanc",
+  "entier",
+];
+
+function includesAny(text: string, keywords: string[]) {
+  return keywords.some((keyword) => text.includes(normalizeSearchText(keyword)));
+}
+
+function countWords(text: string) {
+  return normalizeSearchText(text)
+    .split(" ")
+    .map((word) => word.trim())
+    .filter(Boolean).length;
+}
+
+export function scoreFoodSearch(food: Food, query: string) {
+  const normalizedQuery = normalizeSearchText(query);
+  const normalizedName = normalizeSearchText(food.name);
+  const normalizedBrand = normalizeSearchText(food.brand ?? "");
+  const normalizedCategory = normalizeSearchText(food.category);
+
+  if (!normalizedQuery) {
+    let emptyScore = 0;
+  
+    if (food.isEssential) emptyScore += 2000;
+    if (food.isFavorite) emptyScore += 1000;
+
+    if (food.isFavorite) emptyScore += 1000;
+    if (food.source !== "ciqual") emptyScore += 200;
+    if (simpleFoodCategories.includes(food.category)) emptyScore += 100;
+
+    return emptyScore;
+  }
+
+  const queryWords = normalizedQuery
+    .split(" ")
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  let score = 0;
+  if (food.isEssential) score += 5000;
+
+  const searchableText = `${normalizedName} ${normalizedBrand} ${normalizedCategory}`;
+
+  const allWordsMatch = queryWords.every((word) => searchableText.includes(word));
+
+  if (!allWordsMatch) {
+    return -999999;
+  }
+
+  if (food.isFavorite) score += 2000;
+
+  // Les aliments ajoutés à la main, par étiquette ou Open Food Facts sont souvent plus spécifiques.
+  if (food.source === "label") score += 500;
+  if (food.source === "manual") score += 450;
+  if (food.source === "openfoodfacts") score += 250;
+
+  // Match exact : priorité absolue.
+  if (normalizedName === normalizedQuery) score += 6000;
+
+  // Le nom commence par la recherche : très fort.
+  if (normalizedName.startsWith(normalizedQuery)) score += 3500;
+
+  // Le nom contient la recherche complète.
+  if (normalizedName.includes(normalizedQuery)) score += 2000;
+
+  // Bonus si chaque mot recherché apparaît dans le nom.
+  const allWordsInName = queryWords.every((word) => normalizedName.includes(word));
+  if (allWordsInName) score += 1000;
+
+  // Bonus aliments simples/bruts.
+  if (simpleFoodCategories.includes(food.category)) score += 900;
+
+  // Bonus pour préparations simples : cru, cuit, vapeur, filet, blanc, nature...
+  if (includesAny(normalizedName, simplePreparationKeywords)) score += 500;
+
+  // Bonus si l’aliment est court/simple.
+  const wordsCount = countWords(food.name);
+  if (wordsCount <= 2) score += 800;
+  else if (wordsCount <= 4) score += 500;
+  else if (wordsCount <= 7) score += 200;
+
+  // Grosse pénalité plats transformés.
+  if (includesAny(normalizedName, processedFoodKeywords)) score -= 2500;
+
+  // Pénalité si le mot recherché est seulement dans une préparation longue.
+  if (wordsCount > 10) score -= 500;
+
+  // Pénalité pour catégories moins utiles en recherche de base.
+  if (
+    food.category === "Produits sucrés" ||
+    food.category === "Snacks" ||
+    food.category === "Plats préparés" ||
+    food.category === "Sauces & condiments"
+  ) {
+    score -= 1200;
+  }
+
+  // Un aliment complet est plus utile.
+  if (isFoodComplete(food)) score += 250;
+
+  return score;
+}
+
+export function compareFoodsForSearch(a: Food, b: Food, query: string) {
+  const scoreA = scoreFoodSearch(a, query);
+  const scoreB = scoreFoodSearch(b, query);
+
+  if (scoreA !== scoreB) {
+    return scoreB - scoreA;
+  }
+
+  const aWords = countWords(a.name);
+  const bWords = countWords(b.name);
+
+  if (aWords !== bWords) {
+    return aWords - bWords;
+  }
+
+  return a.name.localeCompare(b.name);
+}

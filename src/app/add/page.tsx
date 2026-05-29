@@ -7,6 +7,8 @@ import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   buildMealItem,
   calculateMealTotals,
+  compareFoodsForSearch,
+  foodMatchesSearch,
   formatMacro,
   isFoodComplete,
   mealTypeLabels,
@@ -17,6 +19,14 @@ import { Food, MealItem, MealType } from "@/types/nutrition";
 function parseQuantity(value: string) {
   const parsed = Number(value.replace(",", "."));
   return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function getSourceLabel(source: Food["source"]) {
+  if (source === "ciqual") return "Ciqual";
+  if (source === "openfoodfacts") return "Open Food Facts";
+  if (source === "label") return "Étiquette";
+  if (source === "manual") return "Manuel";
+  return "Source inconnue";
 }
 
 export default function AddMealPage() {
@@ -34,29 +44,26 @@ export default function AddMealPage() {
   const selectedFood = foods.find((food) => food.id === selectedFoodId) ?? null;
 
   const filteredFoods = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const hasQuery = query.trim().length > 0;
 
     return foods
       .filter((food) => {
-        if (!normalizedQuery) return true;
+        if (!hasQuery) return true;
 
-        return (
-          food.name.toLowerCase().includes(normalizedQuery) ||
-          food.brand?.toLowerCase().includes(normalizedQuery) ||
-          food.category.toLowerCase().includes(normalizedQuery)
-        );
+        return foodMatchesSearch({
+          foodName: food.name,
+          brand: food.brand,
+          category: food.category,
+          query,
+        });
       })
-      .sort((a, b) => {
-        if (a.isFavorite && !b.isFavorite) return -1;
-        if (!a.isFavorite && b.isFavorite) return 1;
-        return a.name.localeCompare(b.name);
-      })
+      .sort((a, b) => compareFoodsForSearch(a, b, query))
       .slice(0, 20);
   }, [foods, query]);
 
   const favoriteFoods = foods
     .filter((food) => food.isFavorite)
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => compareFoodsForSearch(a, b, ""))
     .slice(0, 8);
 
   const draftMeal = {
@@ -134,8 +141,8 @@ export default function AddMealPage() {
             Ajouter un repas
           </h1>
           <p className="mt-2 max-w-2xl text-gray-500">
-            Sélectionne les aliments, indique les quantités, puis enregistre le
-            repas. Les calculs se font automatiquement.
+            Recherche un aliment, indique la quantité, puis construis ton repas.
+            Les aliments simples sont priorisés dans les résultats.
           </p>
         </div>
       </div>
@@ -215,16 +222,16 @@ export default function AddMealPage() {
                     setSelectedFoodId("");
                   }}
                   className="input"
-                  placeholder="Ex : riz, skyr, pain, œuf..."
+                  placeholder="Ex : œuf, poulet, riz, banane..."
                 />
               </Field>
 
-              {query.trim().length > 0 && (
+              {query.trim().length > 0 && !selectedFood && (
                 <div className="max-h-80 space-y-2 overflow-y-auto rounded-2xl border border-black/5 bg-[#FAFAF8] p-2">
                   {filteredFoods.length === 0 ? (
                     <div className="p-4 text-sm text-gray-500">
-                      Aucun aliment trouvé. Ajoute-le d’abord dans la page
-                      Aliments.
+                      Aucun aliment trouvé. Tu peux l’ajouter dans la page
+                      Aliments ou l’importer via Open Food Facts.
                     </div>
                   ) : (
                     filteredFoods.map((food) => {
@@ -245,6 +252,7 @@ export default function AddMealPage() {
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="font-medium">{food.name}</p>
+
                               <p
                                 className={`mt-1 text-sm ${
                                   selected ? "text-white/60" : "text-gray-500"
@@ -252,6 +260,14 @@ export default function AddMealPage() {
                               >
                                 {food.brand ? `${food.brand} · ` : ""}
                                 {food.category}
+                              </p>
+
+                              <p
+                                className={`mt-1 text-xs ${
+                                  selected ? "text-white/40" : "text-gray-400"
+                                }`}
+                              >
+                                Source : {getSourceLabel(food.source)}
                               </p>
                             </div>
 
@@ -294,12 +310,20 @@ export default function AddMealPage() {
                 <div className="rounded-2xl border border-black/5 bg-[#FAFAF8] p-4">
                   <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                     <div>
-                      <p className="text-sm text-gray-500">Aliment sélectionné</p>
-                      <h3 className="mt-1 font-semibold">{selectedFood.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        Aliment sélectionné
+                      </p>
+                      <h3 className="mt-1 font-semibold">
+                        {selectedFood.name}
+                      </h3>
 
                       <p className="mt-1 text-sm text-gray-500">
                         {selectedFood.brand ? `${selectedFood.brand} · ` : ""}
                         {selectedFood.category}
+                      </p>
+
+                      <p className="mt-1 text-xs text-gray-400">
+                        Source : {getSourceLabel(selectedFood.source)}
                       </p>
                     </div>
 
@@ -331,7 +355,9 @@ export default function AddMealPage() {
                     {selectedFood.servingSizeG && (
                       <button
                         type="button"
-                        onClick={() => setQuantityG(String(selectedFood.servingSizeG))}
+                        onClick={() =>
+                          setQuantityG(String(selectedFood.servingSizeG))
+                        }
                         className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-black/5"
                       >
                         {selectedFood.servingName || "Portion"} ·{" "}
@@ -376,7 +402,7 @@ export default function AddMealPage() {
                     </div>
                   )}
 
-                  {selectedFood && !isFoodComplete(selectedFood) && (
+                  {!isFoodComplete(selectedFood) && (
                     <p className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900">
                       Cet aliment a des valeurs nutritionnelles incomplètes. Les
                       totaux du repas peuvent être partiels.
