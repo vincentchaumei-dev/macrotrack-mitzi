@@ -2,6 +2,33 @@ export type MealType = "breakfast" | "lunch" | "snack" | "dinner" | "other";
 
 export type FoodSource = "label" | "manual" | "unknown";
 
+export type Sex = "female" | "male";
+
+export type ActivityLevel =
+  | "sedentary"
+  | "light"
+  | "moderate"
+  | "active"
+  | "very_active";
+
+export type GoalType =
+  | "fat_loss"
+  | "maintenance"
+  | "muscle_gain"
+  | "recomposition";
+
+export type GoalSpeed = "gentle" | "moderate" | "assertive";
+
+export type UserProfile = {
+  sex: Sex;
+  age: number;
+  heightCm: number;
+  currentWeightKg: number;
+  activityLevel: ActivityLevel;
+  goalType: GoalType;
+  goalSpeed: GoalSpeed;
+};
+
 export type Food = {
   id: string;
   name: string;
@@ -70,6 +97,7 @@ export type WeightLog = {
 };
 
 export type AppData = {
+  profile: UserProfile;
   foods: Food[];
   meals: Meal[];
   goals: NutritionGoals;

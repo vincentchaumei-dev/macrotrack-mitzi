@@ -1,4 +1,15 @@
-import { Food, Meal, MealItem, MealType } from "@/types/nutrition";
+import {
+  ActivityLevel,
+  Food,
+  GoalSpeed,
+  GoalType,
+  Meal,
+  MealItem,
+  MealType,
+  NutritionGoals,
+  Sex,
+  UserProfile,
+} from "@/types/nutrition";
 
 export const mealTypeLabels: Record<MealType, string> = {
   breakfast: "Petit-déjeuner",
@@ -44,7 +55,10 @@ export function addDays(date: string, days: number) {
   return `${year}-${month}-${day}`;
 }
 
-function calculateValue(valuePer100g: number | null | undefined, quantityG: number) {
+function calculateValue(
+  valuePer100g: number | null | undefined,
+  quantityG: number
+) {
   if (valuePer100g === null || valuePer100g === undefined) {
     return null;
   }
@@ -99,7 +113,11 @@ export function sumNullable(values: Array<number | null | undefined>) {
     return null;
   }
 
-  return Math.round(knownValues.reduce((total, value) => total + value, 0) * 10) / 10;
+  return (
+    Math.round(
+      knownValues.reduce((total, value) => total + value, 0) * 10
+    ) / 10
+  );
 }
 
 export function calculateMealTotals(meal: Meal) {
@@ -147,4 +165,145 @@ export function isFoodComplete(food: Food) {
     food.carbsPer100g !== null &&
     food.fatPer100g !== null
   );
+}
+
+/* ----------------------------- */
+/* Profil, TDEE et objectifs     */
+/* ----------------------------- */
+
+export const activityLevelLabels: Record<ActivityLevel, string> = {
+  sedentary: "Sédentaire",
+  light: "Légèrement active",
+  moderate: "Modérément active",
+  active: "Active",
+  very_active: "Très active",
+};
+
+export const activityMultipliers: Record<ActivityLevel, number> = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
+};
+
+export const goalTypeLabels: Record<GoalType, string> = {
+  fat_loss: "Perte de poids",
+  maintenance: "Maintien",
+  muscle_gain: "Prise de masse",
+  recomposition: "Recomposition",
+};
+
+export const goalSpeedLabels: Record<GoalSpeed, string> = {
+  gentle: "Douce",
+  moderate: "Modérée",
+  assertive: "Plus ambitieuse",
+};
+
+export function calculateBmr({
+  sex,
+  age,
+  heightCm,
+  currentWeightKg,
+}: {
+  sex: Sex;
+  age: number;
+  heightCm: number;
+  currentWeightKg: number;
+}) {
+  const base = 10 * currentWeightKg + 6.25 * heightCm - 5 * age;
+
+  return Math.round(sex === "male" ? base + 5 : base - 161);
+}
+
+export function calculateTdee(profile: UserProfile) {
+  const bmr = calculateBmr(profile);
+  const multiplier = activityMultipliers[profile.activityLevel];
+
+  return Math.round(bmr * multiplier);
+}
+
+export function getCalorieAdjustment(goalType: GoalType, goalSpeed: GoalSpeed) {
+  if (goalType === "maintenance") return 0;
+
+  if (goalType === "recomposition") {
+    if (goalSpeed === "gentle") return -100;
+    if (goalSpeed === "moderate") return -200;
+    return -300;
+  }
+
+  if (goalType === "fat_loss") {
+    if (goalSpeed === "gentle") return -250;
+    if (goalSpeed === "moderate") return -400;
+    return -500;
+  }
+
+  if (goalType === "muscle_gain") {
+    if (goalSpeed === "gentle") return 150;
+    if (goalSpeed === "moderate") return 250;
+    return 350;
+  }
+
+  return 0;
+}
+
+export function calculateRecommendedGoals(
+  profile: UserProfile
+): NutritionGoals {
+  const tdee = calculateTdee(profile);
+  const calorieAdjustment = getCalorieAdjustment(
+    profile.goalType,
+    profile.goalSpeed
+  );
+
+  const calories = Math.max(tdee + calorieAdjustment, 1200);
+
+  let proteinPerKg = 1.6;
+
+  if (profile.goalType === "fat_loss") proteinPerKg = 1.8;
+  if (profile.goalType === "recomposition") proteinPerKg = 1.8;
+  if (profile.goalType === "muscle_gain") proteinPerKg = 1.7;
+
+  const proteinG = Math.round(profile.currentWeightKg * proteinPerKg);
+  const fatG = Math.round(profile.currentWeightKg * 0.8);
+
+  const caloriesFromProtein = proteinG * 4;
+  const caloriesFromFat = fatG * 9;
+  const remainingCalories = Math.max(
+    calories - caloriesFromProtein - caloriesFromFat,
+    0
+  );
+
+  const carbsG = Math.round(remainingCalories / 4);
+
+  return {
+    calories,
+    proteinG,
+    carbsG,
+    fatG,
+  };
+}
+
+export function explainGoal(profile: UserProfile) {
+  const tdee = calculateTdee(profile);
+  const adjustment = getCalorieAdjustment(profile.goalType, profile.goalSpeed);
+  const target = tdee + adjustment;
+
+  if (profile.goalType === "fat_loss") {
+    return `Ta dépense journalière est estimée à environ ${tdee} kcal. Pour une perte de poids ${goalSpeedLabels[
+      profile.goalSpeed
+    ].toLowerCase()}, l’app propose une cible autour de ${target} kcal.`;
+  }
+
+  if (profile.goalType === "muscle_gain") {
+    return `Ta dépense journalière est estimée à environ ${tdee} kcal. Pour une prise de masse ${goalSpeedLabels[
+      profile.goalSpeed
+    ].toLowerCase()}, l’app propose un léger surplus autour de ${target} kcal.`;
+  }
+
+  if (profile.goalType === "recomposition") {
+    return `Ta dépense journalière est estimée à environ ${tdee} kcal. Pour une recomposition, l’app propose une cible proche du maintien, avec une priorité sur les protéines.`;
+  }
+
+  return `Ta dépense journalière est estimée à environ ${tdee} kcal. L’objectif maintien garde une cible proche de cette dépense.`;
 }

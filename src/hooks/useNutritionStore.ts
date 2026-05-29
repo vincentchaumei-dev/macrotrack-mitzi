@@ -2,19 +2,37 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { seedFoods } from "@/data/seedFoods";
-import { AppData, Food, Meal, NutritionGoals, WeightLog } from "@/types/nutrition";
+import {
+  AppData,
+  Food,
+  Meal,
+  NutritionGoals,
+  UserProfile,
+  WeightLog,
+} from "@/types/nutrition";
 import { createId, todayLocalDate } from "@/lib/nutrition";
 
 const STORAGE_KEY = "macrotrack-personal-v1";
 
+const defaultProfile: UserProfile = {
+  sex: "female",
+  age: 25,
+  heightCm: 165,
+  currentWeightKg: 60,
+  activityLevel: "light",
+  goalType: "fat_loss",
+  goalSpeed: "moderate",
+};
+
 const defaultGoals: NutritionGoals = {
-  calories: 2300,
-  proteinG: 160,
-  carbsG: 250,
-  fatG: 70,
+  calories: 1800,
+  proteinG: 110,
+  carbsG: 190,
+  fatG: 55,
 };
 
 const defaultData: AppData = {
+  profile: defaultProfile,
   foods: seedFoods,
   meals: [],
   goals: defaultGoals,
@@ -23,6 +41,7 @@ const defaultData: AppData = {
 
 function normalizeImportedData(input: Partial<AppData>): AppData {
   return {
+    profile: input.profile ?? defaultProfile,
     foods: Array.isArray(input.foods) ? input.foods : seedFoods,
     meals: Array.isArray(input.meals) ? input.meals : [],
     goals: input.goals ?? defaultGoals,
@@ -104,6 +123,24 @@ export function useNutritionStore() {
     }));
   }
 
+  function updateFood(
+    foodId: string,
+    input: Partial<Omit<Food, "id" | "createdAt">>
+  ) {
+    setData((current) => ({
+      ...current,
+      foods: current.foods.map((food) =>
+        food.id === foodId
+          ? {
+              ...food,
+              ...input,
+              updatedAt: new Date().toISOString(),
+            }
+          : food
+      ),
+    }));
+  }
+
   function addMeal(input: Omit<Meal, "id" | "createdAt" | "updatedAt">) {
     const date = new Date().toISOString();
 
@@ -126,6 +163,13 @@ export function useNutritionStore() {
     setData((current) => ({
       ...current,
       meals: current.meals.filter((meal) => meal.id !== mealId),
+    }));
+  }
+
+  function updateProfile(profile: UserProfile) {
+    setData((current) => ({
+      ...current,
+      profile,
     }));
   }
 
@@ -179,14 +223,17 @@ export function useNutritionStore() {
 
   return {
     hasLoaded,
+    profile: data.profile,
     foods,
     meals,
     goals: data.goals,
     weightLogs,
     addFood,
     deleteFood,
+    updateFood,
     addMeal,
     deleteMeal,
+    updateProfile,
     updateGoals,
     addWeightLog,
     deleteWeightLog,
