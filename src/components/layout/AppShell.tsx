@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FBF7F1] text-[#171717]">
+    <div className="app-premium-bg min-h-screen text-[#171717]">
       <div className="mx-auto flex min-h-screen w-full max-w-[1500px]">
         <aside className="sticky top-0 hidden h-screen w-[116px] shrink-0 p-4 lg:block">
           <div className="flex h-full flex-col items-center rounded-[38px] bg-white/82 px-3 py-4 shadow-[0_24px_70px_rgba(28,21,18,0.08)] ring-1 ring-black/5 backdrop-blur-xl">
@@ -112,7 +112,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col bg-[#FBF7F1] text-[#171717]">
+        <div className="flex min-w-0 flex-1 flex-col text-[#171717]">
           <header className="sticky top-0 z-30 border-b border-black/5 bg-[#FBF7F1]/86 px-4 py-3 backdrop-blur-xl lg:hidden">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">

@@ -13,14 +13,14 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <header className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-start">
+    <header className="mb-9 flex flex-col justify-between gap-6 md:flex-row md:items-start">
       <div>
         <p className="text-sm font-black text-[#E94B4B]">{eyebrow}</p>
-        <h1 className="mt-2 max-w-3xl text-4xl font-black tracking-[-0.045em] text-[#161412] md:text-6xl">
+        <h1 className="ui-page-title mt-3 max-w-4xl text-5xl font-black text-[#161412] md:text-7xl">
           {title}
         </h1>
         {description && (
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#7A746E] md:text-base">
+          <p className="ui-page-text mt-5 max-w-2xl text-sm text-[#7A746E] md:text-base">
             {description}
           </p>
         )}
@@ -40,22 +40,23 @@ export function PremiumCard({
   className?: string;
   tint?: "white" | "cream" | "red" | "dark";
 }) {
-  const styles = {
-    white:
-      "bg-white text-[#171717] shadow-[0_26px_70px_rgba(28,21,18,0.08)] ring-1 ring-black/[0.055]",
-    cream:
-      "bg-[#FFFAF5] text-[#171717] shadow-[0_18px_46px_rgba(28,21,18,0.06)] ring-1 ring-black/[0.055]",
-    red:
-      "bg-gradient-to-br from-[#E94B4B] to-[#B92D35] text-white shadow-[0_28px_70px_rgba(233,75,75,0.28)]",
-    dark:
-      "bg-[#171717] text-white shadow-[0_24px_60px_rgba(23,23,23,0.18)]",
-  };
+  if (tint === "red") {
+    return <div className={`ui-red-card p-6 ${className}`}>{children}</div>;
+  }
 
-  return (
-    <div className={`rounded-[42px] p-6 ${styles[tint]} ${className}`}>
-      {children}
-    </div>
-  );
+  if (tint === "cream") {
+    return <div className={`ui-card-soft p-6 ${className}`}>{children}</div>;
+  }
+
+  if (tint === "dark") {
+    return (
+      <div className={`rounded-[42px] bg-[#171717] p-6 text-white shadow-[0_26px_70px_rgba(23,23,23,0.18)] ${className}`}>
+        {children}
+      </div>
+    );
+  }
+
+  return <div className={`ui-card p-6 ${className}`}>{children}</div>;
 }
 
 export function StatCard({
@@ -68,13 +69,13 @@ export function StatCard({
   detail?: string;
 }) {
   return (
-    <PremiumCard className="p-5" tint="white">
+    <div className="ui-card ui-float p-5">
       <p className="text-sm font-bold text-[#7A746E]">{label}</p>
-      <p className="mt-2 text-3xl font-black tracking-[-0.04em] text-[#171717]">
+      <p className="mt-2 text-3xl font-black tracking-[-0.055em] text-[#171717]">
         {value}
       </p>
       {detail && <p className="mt-2 text-sm leading-5 text-[#7A746E]">{detail}</p>}
-    </PremiumCard>
+    </div>
   );
 }
 
@@ -91,7 +92,7 @@ export function PrimaryButton({
   disabled?: boolean;
   className?: string;
 }) {
-  const classes = `inline-flex items-center justify-center rounded-full bg-[#E94B4B] px-5 py-3 text-sm font-black text-white shadow-[0_18px_34px_rgba(233,75,75,0.26)] transition hover:-translate-y-0.5 hover:bg-[#B92D35] hover:shadow-[0_22px_42px_rgba(233,75,75,0.32)] disabled:cursor-not-allowed disabled:opacity-40 ${className}`;
+  const classes = `ui-button-primary inline-flex items-center justify-center px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-40 ${className}`;
 
   if (href) {
     return (
@@ -119,7 +120,7 @@ export function SoftButton({
   href?: string;
   className?: string;
 }) {
-  const classes = `inline-flex items-center justify-center rounded-full bg-[#FFF2EE] px-5 py-3 text-sm font-black text-[#B92D35] ring-1 ring-[#F6C9C3] transition hover:-translate-y-0.5 hover:bg-[#FFE1DD] ${className}`;
+  const classes = `ui-button-soft inline-flex items-center justify-center px-5 py-3 text-sm ${className}`;
 
   if (href) {
     return (
@@ -147,7 +148,7 @@ export function GhostButton({
   href?: string;
   className?: string;
 }) {
-  const classes = `inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-black text-[#171717] shadow-sm ring-1 ring-black/[0.06] transition hover:-translate-y-0.5 hover:bg-[#FFF2EE] ${className}`;
+  const classes = `ui-button-ghost inline-flex items-center justify-center px-5 py-3 text-sm ${className}`;
 
   if (href) {
     return (
@@ -177,7 +178,7 @@ export function DangerButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-black text-[#B92D35] ring-1 ring-red-100 transition hover:-translate-y-0.5 hover:bg-[#FFE1DD] ${className}`}
+      className={`ui-button-danger inline-flex items-center justify-center px-5 py-3 text-sm ${className}`}
     >
       {children}
     </button>
@@ -199,11 +200,7 @@ export function Pill({
     blue: "bg-sky-100 text-sky-800",
   };
 
-  return (
-    <span className={`rounded-full px-3 py-1 text-xs font-black ${tones[tone]}`}>
-      {children}
-    </span>
-  );
+  return <span className={`ui-pill ${tones[tone]}`}>{children}</span>;
 }
 
 export function Field({
@@ -233,12 +230,14 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-[34px] border border-dashed border-black/10 bg-[#FFFAF5] p-8 text-center">
-      <p className="text-lg font-black text-[#171717]">{title}</p>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#7A746E]">
+    <div className="rounded-[36px] border border-dashed border-black/10 bg-[#FFFAF5]/82 p-9 text-center">
+      <p className="text-xl font-black tracking-[-0.035em] text-[#171717]">
+        {title}
+      </p>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#7A746E]">
         {text}
       </p>
-      {action && <div className="mt-5 flex justify-center">{action}</div>}
+      {action && <div className="mt-6 flex justify-center">{action}</div>}
     </div>
   );
 }
@@ -252,10 +251,10 @@ export function SectionTitle({
 }) {
   return (
     <div>
-      <h2 className="text-2xl font-black tracking-[-0.035em] text-[#171717]">
+      <h2 className="text-3xl font-black tracking-[-0.05em] text-[#171717]">
         {title}
       </h2>
-      {text && <p className="mt-2 text-sm leading-6 text-[#7A746E]">{text}</p>}
+      {text && <p className="mt-3 text-sm leading-7 text-[#7A746E]">{text}</p>}
     </div>
   );
 }

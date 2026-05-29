@@ -22,6 +22,7 @@ import {
   todayLocalDate,
 } from "@/lib/nutrition";
 import { MealTemplate, MealType } from "@/types/nutrition";
+import { PremiumMealCard } from "@/components/ui/PremiumMealCard";
 
 type MealFilter = "all" | MealType;
 type TemplateFilter =
@@ -469,56 +470,44 @@ function FeaturedTemplateCard({
   const totals = calculateMealTotals(meal);
   const badges = getTemplateBadges(template);
 
-  const variants = [
-    "from-[#E94B4B] to-[#B92D35]",
-    "from-[#171717] to-[#3A302D]",
-    "from-[#F6C766] to-[#E94B4B]",
-  ];
-
   return (
-    <article
-      className={`relative overflow-hidden rounded-[42px] bg-gradient-to-br ${
-        variants[index % variants.length]
-      } p-6 text-white shadow-[0_26px_70px_rgba(28,21,18,0.16)]`}
-    >
-      <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/14" />
-      <div className="absolute -bottom-16 left-8 h-44 w-44 rounded-full bg-white/10" />
-
-      <div className="relative">
-        <div className="flex flex-wrap gap-2">
-          {badges.slice(0, 3).map((badge) => (
-            <span
-              key={badge}
-              className="rounded-full bg-white/16 px-3 py-1 text-xs font-black text-white backdrop-blur"
-            >
-              {badge}
-            </span>
-          ))}
-        </div>
-
-        <h3 className="mt-5 text-2xl font-black tracking-[-0.04em]">
-          {template.name}
-        </h3>
-
-        <p className="mt-3 text-sm leading-6 text-white/78">
-          {getTemplatePurpose(template)}
-        </p>
-
-        <div className="mt-6 grid grid-cols-3 gap-2">
-          <FeaturedMini label="Kcal" value={formatMacro(totals.calories, "")} />
-          <FeaturedMini label="Prot." value={formatMacro(totals.proteinG, "g")} />
-          <FeaturedMini label="Aliments" value={`${template.items.length}`} />
-        </div>
-
-        <button
-          type="button"
-          onClick={onAdd}
-          className="mt-6 w-full rounded-full bg-white px-5 py-3 text-sm font-black text-[#171717] shadow-[0_18px_34px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:bg-[#FFF2EE]"
-        >
-          Ajouter au journal
-        </button>
-      </div>
-    </article>
+    <PremiumMealCard
+      variant="featured"
+      accentIndex={index}
+      eyebrow={`${mealTypeLabels[template.type]} · ${template.items.length} aliment(s)`}
+      title={template.name}
+      description={getTemplatePurpose(template)}
+      badges={badges.map((badge) => ({
+        label: badge,
+        tone:
+          badge === "Par défaut"
+            ? "dark"
+            : badge === "Personnel"
+            ? "cream"
+            : "red",
+      }))}
+      totals={{
+        calories: totals.calories,
+        proteinG: totals.proteinG,
+        carbsG: totals.carbsG,
+        fatG: totals.fatG,
+      }}
+      items={template.items.map((item) => ({
+        id: item.id,
+        name: item.foodNameSnapshot,
+        quantityG: item.quantityG,
+        calories: item.calories,
+        proteinG: item.proteinG,
+      }))}
+      actions={[
+        {
+          label: "Ajouter au journal",
+          tone: "primary",
+          onClick: onAdd,
+        },
+      ]}
+      maxItems={3}
+    />
   );
 }
 
@@ -538,71 +527,46 @@ function TemplateCard({
   const badges = getTemplateBadges(template);
 
   return (
-    <article className="rounded-[38px] bg-[#FFFAF5] p-5 ring-1 ring-black/[0.055] transition hover:-translate-y-0.5 hover:bg-[#FFF7F0]">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-xl font-black tracking-[-0.035em] text-[#171717]">
-              {template.name}
-            </h3>
-
-            {badges.map((badge) => (
-              <TemplateBadge key={badge} label={badge} />
-            ))}
-          </div>
-
-          <p className="mt-2 text-sm font-bold text-[#7A746E]">
-            {mealTypeLabels[template.type]} · {template.items.length} aliment(s)
-          </p>
-
-          <p className="mt-3 text-sm leading-6 text-[#7A746E]">
-            {getTemplatePurpose(template)}
-          </p>
-        </div>
-
-        <div className="rounded-full bg-[#FFE1DD] px-4 py-2 text-sm font-black text-[#B92D35]">
-          {formatMacro(totals.calories, " kcal")}
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        <MiniStat label="Prot." value={formatMacro(totals.proteinG, " g")} />
-        <MiniStat label="Gluc." value={formatMacro(totals.carbsG, " g")} />
-        <MiniStat label="Lip." value={formatMacro(totals.fatG, " g")} />
-      </div>
-
-      <div className="mt-5 space-y-2">
-        {template.items.slice(0, 4).map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-col justify-between gap-1 rounded-[24px] bg-white px-4 py-3 text-sm ring-1 ring-black/[0.055] md:flex-row"
-          >
-            <span className="font-bold text-[#171717]">
-              {item.foodNameSnapshot} · {item.quantityG} g
-            </span>
-            <span className="text-[#7A746E]">
-              {item.calories ?? "—"} kcal · {item.proteinG ?? "—"} P
-            </span>
-          </div>
-        ))}
-
-        {template.items.length > 4 && (
-          <div className="rounded-[24px] bg-white/70 px-4 py-3 text-sm font-bold text-[#7A746E] ring-1 ring-black/[0.055]">
-            +{template.items.length - 4} autre(s) aliment(s)
-          </div>
-        )}
-      </div>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        <PrimaryButton onClick={onAdd} className="w-full">
-          Ajouter au journal
-        </PrimaryButton>
-
-        <DangerButton onClick={onDelete} className="w-full">
-          Supprimer
-        </DangerButton>
-      </div>
-    </article>
+    <PremiumMealCard
+      eyebrow={`${mealTypeLabels[template.type]} · ${template.items.length} aliment(s)`}
+      title={template.name}
+      description={getTemplatePurpose(template)}
+      badges={badges.map((badge) => ({
+        label: badge,
+        tone:
+          badge === "Par défaut"
+            ? "dark"
+            : badge === "Personnel"
+            ? "cream"
+            : "red",
+      }))}
+      totals={{
+        calories: totals.calories,
+        proteinG: totals.proteinG,
+        carbsG: totals.carbsG,
+        fatG: totals.fatG,
+      }}
+      items={template.items.map((item) => ({
+        id: item.id,
+        name: item.foodNameSnapshot,
+        quantityG: item.quantityG,
+        calories: item.calories,
+        proteinG: item.proteinG,
+      }))}
+      actions={[
+        {
+          label: "Ajouter au journal",
+          tone: "primary",
+          onClick: onAdd,
+        },
+        {
+          label: "Supprimer",
+          tone: "danger",
+          onClick: onDelete,
+        },
+      ]}
+      maxItems={4}
+    />
   );
 }
 
