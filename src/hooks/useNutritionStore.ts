@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { seedFoods } from "@/data/seedFoods";
+import { seedMealTemplates } from "@/data/seedMealTemplates";
 import {
   AppData,
   Food,
@@ -35,10 +36,11 @@ const defaultGoals: NutritionGoals = {
 
 const defaultData: AppData = {
   onboardingCompleted: false,
+  defaultMealTemplatesAdded: true,
   profile: defaultProfile,
   foods: seedFoods,
   meals: [],
-  mealTemplates: [],
+  mealTemplates: seedMealTemplates,
   goals: defaultGoals,
   weightLogs: [],
 };
@@ -60,20 +62,45 @@ function mergeSeedFoods(existingFoods: Food[]) {
   return Array.from(merged.values());
 }
 
+function mergeSeedMealTemplates(existingTemplates: MealTemplate[]) {
+  const merged = new Map<string, MealTemplate>();
+
+  seedMealTemplates.forEach((template) => {
+    merged.set(template.id, template);
+  });
+
+  existingTemplates.forEach((template) => {
+    merged.set(template.id, {
+      ...merged.get(template.id),
+      ...template,
+    });
+  });
+
+  return Array.from(merged.values());
+}
+
 function normalizeImportedData(input: Partial<AppData>): AppData {
+  const defaultMealTemplatesAlreadyAdded =
+    input.defaultMealTemplatesAdded === true;
+
+  const existingTemplates = Array.isArray(input.mealTemplates)
+    ? input.mealTemplates
+    : [];
+
   return {
     onboardingCompleted:
       typeof input.onboardingCompleted === "boolean"
         ? input.onboardingCompleted
         : false,
+    defaultMealTemplatesAdded: true,
     profile: input.profile ?? defaultProfile,
     foods: Array.isArray(input.foods)
       ? mergeSeedFoods(input.foods)
       : seedFoods,
     meals: Array.isArray(input.meals) ? input.meals : [],
-    mealTemplates: Array.isArray(input.mealTemplates)
-      ? input.mealTemplates
-      : [],
+    mealTemplates: defaultMealTemplatesAlreadyAdded
+      ? existingTemplates
+      : mergeSeedMealTemplates(existingTemplates),
     goals: input.goals ?? defaultGoals,
     weightLogs: Array.isArray(input.weightLogs) ? input.weightLogs : [],
   };
@@ -109,6 +136,7 @@ export function useNutritionStore() {
 
   useEffect(() => {
     if (!hasLoaded) return;
+
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [data, hasLoaded]);
 
@@ -130,7 +158,11 @@ export function useNutritionStore() {
   );
 
   const mealTemplates = useMemo(
-    () => [...data.mealTemplates].sort((a, b) => a.name.localeCompare(b.name)),
+    () => [...data.mealTemplates].sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      return a.name.localeCompare(b.name);
+    }),
     [data.mealTemplates]
   );
 
@@ -286,6 +318,7 @@ export function useNutritionStore() {
       name: meal.name || "Repas type",
       type: meal.type,
       items: cloneMealItems(meal.items),
+      isDefault: false,
       createdAt: date,
       updatedAt: date,
     };

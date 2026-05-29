@@ -98,6 +98,7 @@ export type MealTemplate = {
   name: string;
   type: MealType;
   items: MealItem[];
+  isDefault?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -119,6 +120,7 @@ export type WeightLog = {
 
 export type AppData = {
   onboardingCompleted: boolean;
+  defaultMealTemplatesAdded: boolean;
   profile: UserProfile;
   foods: Food[];
   meals: Meal[];
