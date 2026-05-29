@@ -2,23 +2,14 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import {
-  GhostButton,
-  PageHeader,
-  Pill,
-  PremiumCard,
-  SectionTitle,
-  SoftButton,
-  StatCard,
-} from "@/components/ui/PremiumUI";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import { NutritionGoals, UserProfile } from "@/types/nutrition";
 import { calculateTdee, goalTypeLabels } from "@/lib/nutrition";
 
 const activityLabels: Record<string, string> = {
   sedentary: "Sédentaire",
-  light: "Activité légère",
-  moderate: "Activité modérée",
+  light: "Légère",
+  moderate: "Modérée",
   active: "Active",
   very_active: "Très active",
 };
@@ -66,20 +57,22 @@ function calculateSuggestedGoals(profile: UserProfile): NutritionGoals {
   };
 }
 
-function goalText(profile: UserProfile) {
+function getGoalText(profile: UserProfile) {
   if (profile.goalType === "fat_loss") {
-    return "Objectif orienté perte de poids : l’idée est de créer un déficit raisonnable, sans rendre les journées impossibles à tenir.";
+    return "Créer un déficit raisonnable, sans rendre les journées impossibles à tenir.";
   }
 
   if (profile.goalType === "muscle_gain") {
-    return "Objectif orienté prise de masse : l’idée est d’avoir assez d’énergie pour progresser, sans partir sur un surplus excessif.";
+    return "Avoir assez d’énergie pour progresser, sans partir sur un surplus excessif.";
   }
 
-  return "Objectif maintien : l’idée est de stabiliser le poids tout en gardant des apports cohérents et faciles à suivre.";
+  return "Stabiliser le poids avec des apports cohérents, simples à suivre.";
 }
 
 export default function GoalsPage() {
   const { profile, goals, updateProfile, updateGoals } = useNutritionStore();
+
+  const [message, setMessage] = useState("");
 
   const [profileForm, setProfileForm] = useState({
     sex: profile.sex,
@@ -118,6 +111,11 @@ export default function GoalsPage() {
     [previewProfile]
   );
 
+  function notify(text: string) {
+    setMessage(text);
+    window.setTimeout(() => setMessage(""), 2400);
+  }
+
   function updateProfileField(key: keyof typeof profileForm, value: string) {
     setProfileForm((current) => ({
       ...current,
@@ -139,6 +137,29 @@ export default function GoalsPage() {
       carbsG: String(suggestedGoals.carbsG),
       fatG: String(suggestedGoals.fatG),
     });
+
+    notify("Suggestion appliquée.");
+  }
+
+  function resetForms() {
+    setProfileForm({
+      sex: profile.sex,
+      age: String(profile.age),
+      heightCm: String(profile.heightCm),
+      currentWeightKg: String(profile.currentWeightKg),
+      activityLevel: profile.activityLevel,
+      goalType: profile.goalType,
+      goalSpeed: profile.goalSpeed,
+    });
+
+    setGoalsForm({
+      calories: String(goals.calories),
+      proteinG: String(goals.proteinG),
+      carbsG: String(goals.carbsG),
+      fatG: String(goals.fatG),
+    });
+
+    notify("Changements annulés.");
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -163,289 +184,330 @@ export default function GoalsPage() {
 
     updateProfile(nextProfile);
     updateGoals(nextGoals);
+    notify("Objectifs enregistrés.");
   }
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl">
-        <PageHeader
-          eyebrow="Objectifs"
-          title="Profil & macros"
-          description="Définis un objectif clair, accessible et ajustable. Les calculs donnent une base de départ, mais la progression se pilote surtout avec la tendance sur plusieurs semaines."
-          action={
-            <PremiumCard tint="red" className="max-w-sm">
-              <p className="text-sm font-black text-white/70">
-                Dépense estimée
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <section className="pt-2">
+          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+            Objectifs
+          </p>
+
+          <div className="mt-3 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="mt-display text-[50px] font-semibold leading-[0.9] tracking-[-0.055em] text-[var(--mt-ink)]">
+                Profil
+                <br />
+                & macros
+              </h1>
+
+              <p className="mt-4 max-w-[300px] text-[15px] leading-7 text-[var(--mt-ink-2)]">
+                Une base claire pour suivre un objectif sans se prendre la tête.
               </p>
-              <p className="mt-3 text-5xl font-black tracking-[-0.06em]">
+            </div>
+
+            <div className="shrink-0 rounded-[24px] bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-4 text-white shadow-[var(--mt-shadow-red)]">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/62">
+                TDEE
+              </p>
+              <p className="mt-display mt-2 text-[36px] font-semibold leading-none tracking-[-0.05em]">
                 {estimatedTdee}
               </p>
-              <p className="mt-1 text-sm font-bold text-white/78">
-                kcal / jour
+              <p className="mt-1 text-[10px] font-black uppercase text-white/62">
+                kcal/j
               </p>
-              <p className="mt-4 text-sm leading-6 text-white/82">
-                Estimation basée sur le profil et le niveau d’activité.
-              </p>
-            </PremiumCard>
-          }
-        />
-
-        <section className="mb-5 grid gap-4 md:grid-cols-4">
-          <StatCard label="Calories" value={`${goals.calories} kcal`} />
-          <StatCard label="Protéines" value={`${goals.proteinG} g`} />
-          <StatCard label="Glucides" value={`${goals.carbsG} g`} />
-          <StatCard label="Lipides" value={`${goals.fatG} g`} />
+            </div>
+          </div>
         </section>
 
-        <form
-          onSubmit={handleSubmit}
-          className="grid gap-5 xl:grid-cols-[1fr_0.85fr]"
-        >
-          <div className="space-y-5">
-            <PremiumCard tint="white">
-              <SectionTitle
-                title="Profil"
-                text="Ces informations servent à estimer la dépense journalière et à proposer des objectifs cohérents."
+        {message && (
+          <div className="rounded-[18px] border border-[var(--mt-success-soft)] bg-[var(--mt-success-soft)] px-4 py-3 text-[13px] font-extrabold text-[var(--mt-success)]">
+            {message}
+          </div>
+        )}
+
+        <section className="grid grid-cols-4 gap-2">
+          <MacroMini label="Kcal" value={`${goals.calories}`} />
+          <MacroMini label="Prot." value={`${goals.proteinG}g`} />
+          <MacroMini label="Gluc." value={`${goals.carbsG}g`} />
+          <MacroMini label="Lip." value={`${goals.fatG}g`} />
+        </section>
+
+        <section className="mt-card overflow-hidden rounded-[28px]">
+          <div className="bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
+            <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/62">
+              Objectif actuel
+            </p>
+
+            <h2 className="mt-display mt-2 text-[34px] font-semibold leading-none tracking-[-0.04em]">
+              {goalTypeLabels[profileForm.goalType]}
+            </h2>
+
+            <p className="mt-4 text-[14px] leading-7 text-white/78">
+              {getGoalText(previewProfile)}
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="rounded-full bg-white/16 px-3 py-1.5 text-[11px] font-black text-white backdrop-blur">
+                {activityLabels[profileForm.activityLevel]}
+              </span>
+              <span className="rounded-full bg-white/16 px-3 py-1.5 text-[11px] font-black text-white backdrop-blur">
+                {goalSpeedLabels[profileForm.goalSpeed]}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-card rounded-[28px] p-5">
+          <SectionHead
+            kicker="Étape 1"
+            title="Profil"
+            text="Ces informations servent à estimer la dépense journalière."
+          />
+
+          <div className="mt-5 grid gap-4">
+            <Field label="Sexe">
+              <div className="grid grid-cols-2 gap-2">
+                <ChoiceButton
+                  active={profileForm.sex === "female"}
+                  onClick={() => updateProfileField("sex", "female")}
+                >
+                  Femme
+                </ChoiceButton>
+                <ChoiceButton
+                  active={profileForm.sex === "male"}
+                  onClick={() => updateProfileField("sex", "male")}
+                >
+                  Homme
+                </ChoiceButton>
+              </div>
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Âge">
+                <input
+                  value={profileForm.age}
+                  onChange={(event) =>
+                    updateProfileField("age", event.target.value)
+                  }
+                  className="GoalInput"
+                  placeholder="25"
+                />
+              </Field>
+
+              <Field label="Taille">
+                <input
+                  value={profileForm.heightCm}
+                  onChange={(event) =>
+                    updateProfileField("heightCm", event.target.value)
+                  }
+                  className="GoalInput"
+                  placeholder="165"
+                />
+              </Field>
+            </div>
+
+            <Field label="Poids actuel">
+              <input
+                value={profileForm.currentWeightKg}
+                onChange={(event) =>
+                  updateProfileField("currentWeightKg", event.target.value)
+                }
+                className="GoalInput"
+                placeholder="60"
               />
+            </Field>
+          </div>
+        </section>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <Field label="Sexe">
-                  <select
-                    value={profileForm.sex}
-                    onChange={(event) =>
-                      updateProfileField("sex", event.target.value)
-                    }
-                    className="input"
-                  >
-                    <option value="female">Femme</option>
-                    <option value="male">Homme</option>
-                  </select>
-                </Field>
+        <section className="mt-card rounded-[28px] p-5">
+          <SectionHead
+            kicker="Étape 2"
+            title="Direction"
+            text="Choisis le sens de progression et le rythme souhaité."
+          />
 
-                <Field label="Âge">
-                  <input
-                    value={profileForm.age}
-                    onChange={(event) =>
-                      updateProfileField("age", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Ex : 25"
-                  />
-                </Field>
-
-                <Field label="Taille en cm">
-                  <input
-                    value={profileForm.heightCm}
-                    onChange={(event) =>
-                      updateProfileField("heightCm", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Ex : 165"
-                  />
-                </Field>
-
-                <Field label="Poids actuel en kg">
-                  <input
-                    value={profileForm.currentWeightKg}
-                    onChange={(event) =>
-                      updateProfileField("currentWeightKg", event.target.value)
-                    }
-                    className="input"
-                    placeholder="Ex : 60"
-                  />
-                </Field>
+          <div className="mt-5 space-y-5">
+            <Field label="Type d’objectif">
+              <div className="grid gap-2">
+                <ChoiceButton
+                  active={profileForm.goalType === "fat_loss"}
+                  onClick={() => updateProfileField("goalType", "fat_loss")}
+                >
+                  Perte de poids
+                </ChoiceButton>
+                <ChoiceButton
+                  active={profileForm.goalType === "maintenance"}
+                  onClick={() => updateProfileField("goalType", "maintenance")}
+                >
+                  Maintien
+                </ChoiceButton>
+                <ChoiceButton
+                  active={profileForm.goalType === "muscle_gain"}
+                  onClick={() => updateProfileField("goalType", "muscle_gain")}
+                >
+                  Prise de masse
+                </ChoiceButton>
               </div>
-            </PremiumCard>
+            </Field>
 
-            <PremiumCard tint="white">
-              <SectionTitle
-                title="Objectif"
-                text="Choisis le sens de progression. L’app propose ensuite une base de calories et de macros."
-              />
-
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <Field label="Type d’objectif">
-                  <select
-                    value={profileForm.goalType}
-                    onChange={(event) =>
-                      updateProfileField("goalType", event.target.value)
-                    }
-                    className="input"
-                  >
-                    <option value="fat_loss">Perte de poids</option>
-                    <option value="maintenance">Maintien</option>
-                    <option value="muscle_gain">Prise de masse</option>
-                  </select>
-                </Field>
-
-                <Field label="Vitesse">
-                  <select
-                    value={profileForm.goalSpeed}
-                    onChange={(event) =>
-                      updateProfileField("goalSpeed", event.target.value)
-                    }
-                    className="input"
-                  >
-                    <option value="gentle">Progressif</option>
-                    <option value="moderate">Modéré</option>
-                    <option value="ambitious">Rapide</option>
-                  </select>
-                </Field>
-
-                <Field label="Niveau d’activité">
-                  <select
-                    value={profileForm.activityLevel}
-                    onChange={(event) =>
-                      updateProfileField("activityLevel", event.target.value)
-                    }
-                    className="input"
-                  >
-                    <option value="sedentary">Sédentaire</option>
-                    <option value="light">Activité légère</option>
-                    <option value="moderate">Activité modérée</option>
-                    <option value="active">Active</option>
-                    <option value="very_active">Très active</option>
-                  </select>
-                </Field>
+            <Field label="Vitesse">
+              <div className="grid grid-cols-3 gap-2">
+                <ChoiceButton
+                  active={profileForm.goalSpeed === "gentle"}
+                  onClick={() => updateProfileField("goalSpeed", "gentle")}
+                >
+                  Doux
+                </ChoiceButton>
+                <ChoiceButton
+                  active={profileForm.goalSpeed === "moderate"}
+                  onClick={() => updateProfileField("goalSpeed", "moderate")}
+                >
+                  Modéré
+                </ChoiceButton>
+                <ChoiceButton
+                  active={profileForm.goalSpeed === "assertive"}
+                  onClick={() => updateProfileField("goalSpeed", "assertive")}
+                >
+                  Rapide
+                </ChoiceButton>
               </div>
+            </Field>
 
-              <div className="mt-6 rounded-[32px] bg-[#FFFAF5] p-5 ring-1 ring-black/[0.055]">
-                <div className="flex flex-wrap gap-2">
-                  <Pill tone="red">{goalTypeLabels[profileForm.goalType]}</Pill>
-                  <Pill tone="cream">
-                    {activityLabels[profileForm.activityLevel]}
-                  </Pill>
-                  <Pill tone="cream">
-                    {goalSpeedLabels[profileForm.goalSpeed]}
-                  </Pill>
-                </div>
+            <Field label="Activité">
+              <select
+                value={profileForm.activityLevel}
+                onChange={(event) =>
+                  updateProfileField("activityLevel", event.target.value)
+                }
+                className="GoalInput"
+              >
+                <option value="sedentary">Sédentaire</option>
+                <option value="light">Activité légère</option>
+                <option value="moderate">Activité modérée</option>
+                <option value="active">Active</option>
+                <option value="very_active">Très active</option>
+              </select>
+            </Field>
+          </div>
+        </section>
 
-                <p className="mt-4 text-sm leading-7 text-[#7A746E]">
-                  {goalText(previewProfile)}
-                </p>
-              </div>
-            </PremiumCard>
+        <section className="mt-card rounded-[28px] p-5">
+          <div className="flex items-start justify-between gap-3">
+            <SectionHead
+              kicker="Étape 3"
+              title="Cibles"
+              text="Applique la suggestion ou ajuste manuellement."
+            />
+
+            <button
+              type="button"
+              onClick={applySuggestedGoals}
+              className="shrink-0 rounded-full bg-[var(--mt-rouge-wash)] px-3 py-2 text-[11px] font-black text-[var(--mt-rouge-deep)] ring-1 ring-[var(--mt-rouge-soft)]"
+            >
+              Suggérer
+            </button>
           </div>
 
-          <aside className="xl:sticky xl:top-8 xl:self-start">
-            <PremiumCard tint="white">
-              <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start xl:flex-col">
-                <SectionTitle
-                  title="Cibles nutrition"
-                  text="Tu peux appliquer la suggestion ou ajuster manuellement selon le ressenti."
-                />
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Field label="Calories">
+              <input
+                value={goalsForm.calories}
+                onChange={(event) =>
+                  updateGoalsField("calories", event.target.value)
+                }
+                className="GoalInput"
+              />
+            </Field>
 
-                <SoftButton onClick={applySuggestedGoals}>
-                  Appliquer la suggestion
-                </SoftButton>
-              </div>
+            <Field label="Protéines">
+              <input
+                value={goalsForm.proteinG}
+                onChange={(event) =>
+                  updateGoalsField("proteinG", event.target.value)
+                }
+                className="GoalInput"
+              />
+            </Field>
 
-              <div className="mt-6 grid gap-4">
-                <Field label="Calories / jour">
-                  <input
-                    value={goalsForm.calories}
-                    onChange={(event) =>
-                      updateGoalsField("calories", event.target.value)
-                    }
-                    className="input"
-                  />
-                </Field>
+            <Field label="Glucides">
+              <input
+                value={goalsForm.carbsG}
+                onChange={(event) =>
+                  updateGoalsField("carbsG", event.target.value)
+                }
+                className="GoalInput"
+              />
+            </Field>
 
-                <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-1">
-                  <Field label="Protéines">
-                    <input
-                      value={goalsForm.proteinG}
-                      onChange={(event) =>
-                        updateGoalsField("proteinG", event.target.value)
-                      }
-                      className="input"
-                    />
-                  </Field>
+            <Field label="Lipides">
+              <input
+                value={goalsForm.fatG}
+                onChange={(event) =>
+                  updateGoalsField("fatG", event.target.value)
+                }
+                className="GoalInput"
+              />
+            </Field>
+          </div>
 
-                  <Field label="Glucides">
-                    <input
-                      value={goalsForm.carbsG}
-                      onChange={(event) =>
-                        updateGoalsField("carbsG", event.target.value)
-                      }
-                      className="input"
-                    />
-                  </Field>
+          <div className="mt-5 rounded-[24px] bg-[var(--mt-card-soft)] p-4 ring-1 ring-[var(--mt-line)]">
+            <p className="text-[12px] font-black uppercase tracking-[0.14em] text-[var(--mt-rouge)]">
+              Suggestion actuelle
+            </p>
 
-                  <Field label="Lipides">
-                    <input
-                      value={goalsForm.fatG}
-                      onChange={(event) =>
-                        updateGoalsField("fatG", event.target.value)
-                      }
-                      className="input"
-                    />
-                  </Field>
-                </div>
-              </div>
+            <div className="mt-4 grid grid-cols-4 gap-2">
+              <SuggestionMini label="Kcal" value={`${suggestedGoals.calories}`} />
+              <SuggestionMini label="P" value={`${suggestedGoals.proteinG}g`} />
+              <SuggestionMini label="G" value={`${suggestedGoals.carbsG}g`} />
+              <SuggestionMini label="L" value={`${suggestedGoals.fatG}g`} />
+            </div>
+          </div>
+        </section>
 
-              <div className="mt-6 rounded-[34px] bg-[#FFFAF5] p-5 ring-1 ring-black/[0.055]">
-                <p className="text-sm font-black text-[#171717]">
-                  Suggestion actuelle
-                </p>
+        <section className="grid gap-2">
+          <button type="submit" className="mt-btn-primary">
+            Enregistrer les objectifs
+          </button>
 
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <MiniStat
-                    label="Calories"
-                    value={`${suggestedGoals.calories}`}
-                  />
-                  <MiniStat
-                    label="Prot."
-                    value={`${suggestedGoals.proteinG} g`}
-                  />
-                  <MiniStat
-                    label="Gluc."
-                    value={`${suggestedGoals.carbsG} g`}
-                  />
-                  <MiniStat
-                    label="Lip."
-                    value={`${suggestedGoals.fatG} g`}
-                  />
-                </div>
-              </div>
+          <button
+            type="button"
+            onClick={resetForms}
+            className="rounded-[18px] bg-white px-4 py-4 text-[13px] font-black text-[var(--mt-ink)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
+          >
+            Annuler les changements
+          </button>
+        </section>
 
-              <div className="mt-6 grid gap-3">
-                <button
-                  type="submit"
-                  className="ui-button-primary w-full px-5 py-4 text-sm"
-                >
-                  Enregistrer les objectifs
-                </button>
-
-                <GhostButton
-                  onClick={() => {
-                    setProfileForm({
-                      sex: profile.sex,
-                      age: String(profile.age),
-                      heightCm: String(profile.heightCm),
-                      currentWeightKg: String(profile.currentWeightKg),
-                      activityLevel: profile.activityLevel,
-                      goalType: profile.goalType,
-                      goalSpeed: profile.goalSpeed,
-                    });
-
-                    setGoalsForm({
-                      calories: String(goals.calories),
-                      proteinG: String(goals.proteinG),
-                      carbsG: String(goals.carbsG),
-                      fatG: String(goals.fatG),
-                    });
-                  }}
-                  className="w-full"
-                >
-                  Annuler les changements
-                </GhostButton>
-              </div>
-            </PremiumCard>
-          </aside>
-        </form>
-      </div>
+        <div className="h-10" />
+      </form>
     </AppShell>
+  );
+}
+
+function SectionHead({
+  kicker,
+  title,
+  text,
+}: {
+  kicker: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div>
+      <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+        {kicker}
+      </p>
+      <h2 className="mt-display mt-1 text-[26px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
+        {title}
+      </h2>
+      <p className="mt-2 text-[13px] leading-6 text-[var(--mt-ink-2)]">
+        {text}
+      </p>
+    </div>
   );
 }
 
@@ -458,7 +520,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-black text-[#171717]">
+      <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
         {label}
       </span>
       {children}
@@ -466,11 +528,52 @@ function Field({
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
+function ChoiceButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/[0.055]">
-      <p className="text-xs font-bold text-[#7A746E]">{label}</p>
-      <p className="mt-1 font-black text-[#171717]">{value}</p>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-[18px] px-3 py-3 text-[12px] font-black ${
+        active
+          ? "bg-[var(--mt-rouge)] text-white shadow-[var(--mt-shadow-red)]"
+          : "bg-[var(--mt-card-soft)] text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MacroMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] bg-white p-3 shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]">
+      <p className="text-[10px] font-black uppercase text-[var(--mt-ink-3)]">
+        {label}
+      </p>
+      <p className="mt-2 text-[17px] font-black leading-none tracking-[-0.03em] text-[var(--mt-ink)]">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SuggestionMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[16px] bg-white p-3 text-center ring-1 ring-[var(--mt-line)]">
+      <p className="text-[10px] font-black uppercase text-[var(--mt-ink-3)]">
+        {label}
+      </p>
+      <p className="mt-1 text-[13px] font-black text-[var(--mt-ink)]">
+        {value}
+      </p>
     </div>
   );
 }
