@@ -1,0 +1,77 @@
+export type MealType = "breakfast" | "lunch" | "snack" | "dinner" | "other";
+
+export type FoodSource = "label" | "manual" | "unknown";
+
+export type Food = {
+  id: string;
+  name: string;
+  brand?: string;
+  category: string;
+  servingName?: string;
+  servingSizeG?: number | null;
+
+  caloriesPer100g: number | null;
+  proteinPer100g: number | null;
+  carbsPer100g: number | null;
+  fatPer100g: number | null;
+  saturatedFatPer100g?: number | null;
+  sugarPer100g?: number | null;
+  fiberPer100g?: number | null;
+  saltPer100g?: number | null;
+
+  source: FoodSource;
+  verified: boolean;
+
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MealItem = {
+  id: string;
+  foodId: string;
+  foodNameSnapshot: string;
+  brandSnapshot?: string;
+  quantityG: number;
+
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+  fiberG?: number | null;
+  sugarG?: number | null;
+  saltG?: number | null;
+
+  isComplete: boolean;
+};
+
+export type Meal = {
+  id: string;
+  date: string;
+  type: MealType;
+  name?: string;
+  items: MealItem[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NutritionGoals = {
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+};
+
+export type WeightLog = {
+  id: string;
+  date: string;
+  weightKg: number;
+  notes?: string;
+  createdAt: string;
+};
+
+export type AppData = {
+  foods: Food[];
+  meals: Meal[];
+  goals: NutritionGoals;
+  weightLogs: WeightLog[];
+};
