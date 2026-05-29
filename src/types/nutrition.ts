@@ -82,6 +82,15 @@ export type Meal = {
   updatedAt: string;
 };
 
+export type MealTemplate = {
+  id: string;
+  name: string;
+  type: MealType;
+  items: MealItem[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type NutritionGoals = {
   calories: number;
   proteinG: number;
@@ -101,6 +110,7 @@ export type AppData = {
   profile: UserProfile;
   foods: Food[];
   meals: Meal[];
+  mealTemplates: MealTemplate[];
   goals: NutritionGoals;
   weightLogs: WeightLog[];
 };

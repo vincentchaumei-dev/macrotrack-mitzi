@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
@@ -14,11 +15,58 @@ import {
 } from "@/lib/nutrition";
 
 export default function JournalPage() {
-  const { getMealsByDate, deleteMeal } = useNutritionStore();
+  const {
+    getMealsByDate,
+    deleteMeal,
+    duplicateMeal,
+    copyDay,
+    saveMealAsTemplate,
+  } = useNutritionStore();
+
   const [date, setDate] = useState(todayLocalDate());
+  const [message, setMessage] = useState("");
 
   const meals = getMealsByDate(date);
   const totals = calculateDayTotals(meals);
+
+  function notify(text: string) {
+    setMessage(text);
+    window.setTimeout(() => setMessage(""), 2500);
+  }
+
+  function handleCopyPreviousDay() {
+    const previousDate = addDays(date, -1);
+    const copiedCount = copyDay(previousDate, date);
+
+    if (copiedCount === 0) {
+      notify("Aucun repas trouvé sur la journée précédente.");
+      return;
+    }
+
+    notify(`${copiedCount} repas copié(s) depuis la veille.`);
+  }
+
+  function handleDuplicateMeal(mealId: string) {
+    const duplicated = duplicateMeal(mealId, date);
+
+    if (!duplicated) {
+      notify("Impossible de dupliquer ce repas.");
+      return;
+    }
+
+    notify("Repas dupliqué sur cette journée.");
+  }
+
+  function handleSaveTemplate(mealId: string) {
+    const template = saveMealAsTemplate(mealId);
+
+    if (!template) {
+      notify("Impossible de sauvegarder ce repas type.");
+      return;
+    }
+
+    notify("Repas sauvegardé comme repas type.");
+  }
 
   return (
     <AppShell>
@@ -29,11 +77,11 @@ export default function JournalPage() {
             {formatDateFr(date)}
           </h1>
           <p className="mt-2 text-gray-500">
-            Consulte tes repas et totaux par journée.
+            Consulte, copie et réutilise les repas par journée.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setDate(addDays(date, -1))}
             className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm"
@@ -56,6 +104,28 @@ export default function JournalPage() {
           </button>
         </div>
       </div>
+
+      <section className="mb-5 flex flex-wrap gap-3">
+        <Link
+          href="/add"
+          className="rounded-full bg-[#10121A] px-4 py-2 text-sm font-medium text-white"
+        >
+          Ajouter un repas
+        </Link>
+
+        <button
+          onClick={handleCopyPreviousDay}
+          className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-black/5"
+        >
+          Copier la veille
+        </button>
+      </section>
+
+      {message && (
+        <div className="mb-5 rounded-2xl bg-green-50 p-4 text-sm text-green-800">
+          {message}
+        </div>
+      )}
 
       <section className="grid gap-4 md:grid-cols-4">
         <Summary label="Calories" value={formatMacro(totals.calories, " kcal")} />
@@ -81,7 +151,7 @@ export default function JournalPage() {
                   key={meal.id}
                   className="rounded-2xl border border-black/5 bg-[#FAFAF8] p-5"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                     <div>
                       <h3 className="font-semibold">
                         {meal.name || mealTypeLabels[meal.type]}
@@ -91,12 +161,28 @@ export default function JournalPage() {
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => deleteMeal(meal.id)}
-                      className="rounded-full border border-black/10 px-3 py-1.5 text-xs text-gray-500 hover:bg-black/5"
-                    >
-                      Supprimer
-                    </button>
+                    <div className="flex flex-wrap gap-2 md:justify-end">
+                      <button
+                        onClick={() => handleDuplicateMeal(meal.id)}
+                        className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-black/5"
+                      >
+                        Dupliquer
+                      </button>
+
+                      <button
+                        onClick={() => handleSaveTemplate(meal.id)}
+                        className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-black/5"
+                      >
+                        Repas type
+                      </button>
+
+                      <button
+                        onClick={() => deleteMeal(meal.id)}
+                        className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4 grid gap-3 md:grid-cols-4">
@@ -122,7 +208,7 @@ export default function JournalPage() {
                     {meal.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex justify-between rounded-xl bg-white px-4 py-3 text-sm"
+                        className="flex flex-col justify-between gap-1 rounded-xl bg-white px-4 py-3 text-sm md:flex-row"
                       >
                         <span>
                           {item.foodNameSnapshot} · {item.quantityG} g

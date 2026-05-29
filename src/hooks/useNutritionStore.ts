@@ -6,6 +6,8 @@ import {
   AppData,
   Food,
   Meal,
+  MealItem,
+  MealTemplate,
   NutritionGoals,
   UserProfile,
   WeightLog,
@@ -35,6 +37,7 @@ const defaultData: AppData = {
   profile: defaultProfile,
   foods: seedFoods,
   meals: [],
+  mealTemplates: [],
   goals: defaultGoals,
   weightLogs: [],
 };
@@ -44,9 +47,19 @@ function normalizeImportedData(input: Partial<AppData>): AppData {
     profile: input.profile ?? defaultProfile,
     foods: Array.isArray(input.foods) ? input.foods : seedFoods,
     meals: Array.isArray(input.meals) ? input.meals : [],
+    mealTemplates: Array.isArray(input.mealTemplates)
+      ? input.mealTemplates
+      : [],
     goals: input.goals ?? defaultGoals,
     weightLogs: Array.isArray(input.weightLogs) ? input.weightLogs : [],
   };
+}
+
+function cloneMealItems(items: MealItem[]) {
+  return items.map((item) => ({
+    ...item,
+    id: createId(),
+  }));
 }
 
 export function useNutritionStore() {
@@ -91,6 +104,14 @@ export function useNutritionStore() {
         return b.date.localeCompare(a.date);
       }),
     [data.meals]
+  );
+
+  const mealTemplates = useMemo(
+    () =>
+      [...data.mealTemplates].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      ),
+    [data.mealTemplates]
   );
 
   const weightLogs = useMemo(
@@ -166,6 +187,115 @@ export function useNutritionStore() {
     }));
   }
 
+  function duplicateMeal(mealId: string, targetDate: string) {
+    const meal = data.meals.find((item) => item.id === mealId);
+
+    if (!meal) return null;
+
+    const date = new Date().toISOString();
+
+    const duplicatedMeal: Meal = {
+      ...meal,
+      id: createId(),
+      date: targetDate,
+      name: meal.name ? `${meal.name} copie` : undefined,
+      items: cloneMealItems(meal.items),
+      createdAt: date,
+      updatedAt: date,
+    };
+
+    setData((current) => ({
+      ...current,
+      meals: [...current.meals, duplicatedMeal],
+    }));
+
+    return duplicatedMeal;
+  }
+
+  function copyDay(sourceDate: string, targetDate: string) {
+    const sourceMeals = data.meals.filter((meal) => meal.date === sourceDate);
+
+    if (sourceMeals.length === 0) {
+      return 0;
+    }
+
+    const date = new Date().toISOString();
+
+    const copiedMeals: Meal[] = sourceMeals.map((meal) => ({
+      ...meal,
+      id: createId(),
+      date: targetDate,
+      items: cloneMealItems(meal.items),
+      createdAt: date,
+      updatedAt: date,
+    }));
+
+    setData((current) => ({
+      ...current,
+      meals: [...current.meals, ...copiedMeals],
+    }));
+
+    return copiedMeals.length;
+  }
+
+  function saveMealAsTemplate(mealId: string) {
+    const meal = data.meals.find((item) => item.id === mealId);
+
+    if (!meal) return null;
+
+    const date = new Date().toISOString();
+
+    const template: MealTemplate = {
+      id: createId(),
+      name: meal.name || "Repas type",
+      type: meal.type,
+      items: cloneMealItems(meal.items),
+      createdAt: date,
+      updatedAt: date,
+    };
+
+    setData((current) => ({
+      ...current,
+      mealTemplates: [...current.mealTemplates, template],
+    }));
+
+    return template;
+  }
+
+  function deleteMealTemplate(templateId: string) {
+    setData((current) => ({
+      ...current,
+      mealTemplates: current.mealTemplates.filter(
+        (template) => template.id !== templateId
+      ),
+    }));
+  }
+
+  function addTemplateAsMeal(templateId: string, targetDate = todayLocalDate()) {
+    const template = data.mealTemplates.find((item) => item.id === templateId);
+
+    if (!template) return null;
+
+    const date = new Date().toISOString();
+
+    const meal: Meal = {
+      id: createId(),
+      date: targetDate,
+      type: template.type,
+      name: template.name,
+      items: cloneMealItems(template.items),
+      createdAt: date,
+      updatedAt: date,
+    };
+
+    setData((current) => ({
+      ...current,
+      meals: [...current.meals, meal],
+    }));
+
+    return meal;
+  }
+
   function updateProfile(profile: UserProfile) {
     setData((current) => ({
       ...current,
@@ -226,6 +356,7 @@ export function useNutritionStore() {
     profile: data.profile,
     foods,
     meals,
+    mealTemplates,
     goals: data.goals,
     weightLogs,
     addFood,
@@ -233,6 +364,11 @@ export function useNutritionStore() {
     updateFood,
     addMeal,
     deleteMeal,
+    duplicateMeal,
+    copyDay,
+    saveMealAsTemplate,
+    deleteMealTemplate,
+    addTemplateAsMeal,
     updateProfile,
     updateGoals,
     addWeightLog,

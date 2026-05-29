@@ -9,7 +9,7 @@ const desktopNavigation = [
   { label: "Ajouter un repas", href: "/add" },
   { label: "Aliments", href: "/foods" },
   { label: "Objectifs", href: "/goals" },
-  { label: "Recettes", href: "/recipes" },
+  { label: "Repas types", href: "/recipes" },
   { label: "Poids", href: "/weight" },
   { label: "Analyse", href: "/analytics" },
   { label: "Paramètres", href: "/settings" },
