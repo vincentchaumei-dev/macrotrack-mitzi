@@ -17,6 +17,8 @@ import {
 } from "@/lib/nutrition";
 import { Food, MealItem, MealType } from "@/types/nutrition";
 
+const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+
 function parseQuantity(value: string) {
   const parsed = Number(value.replace(",", "."));
   return Number.isNaN(parsed) ? 0 : parsed;
@@ -28,6 +30,12 @@ function getSourceLabel(source: Food["source"]) {
   if (source === "label") return "Étiquette";
   if (source === "manual") return "Manuel";
   return "Source inconnue";
+}
+
+function getMealStepLabel(itemsCount: number) {
+  if (itemsCount === 0) return "Construis ton repas";
+  if (itemsCount === 1) return "1 aliment ajouté";
+  return `${itemsCount} aliments ajoutés`;
 }
 
 export default function AddMealPage() {
@@ -65,16 +73,11 @@ export default function AddMealPage() {
         return matchesSimpleMode && matchesQuery;
       })
       .sort((a, b) => compareFoodsForSearch(a, b, query))
-      .slice(0, hasQuery || includeFullDatabase ? 25 : 12);
+      .slice(0, hasQuery || includeFullDatabase ? 24 : 10);
   }, [foods, query, includeFullDatabase]);
 
-  const favoriteFoods = foods
-    .filter((food) => food.isFavorite)
-    .sort((a, b) => compareFoodsForSearch(a, b, ""))
-    .slice(0, 10);
-
-  const essentialFoods = foods
-    .filter((food) => food.isEssential && !food.isFavorite)
+  const quickFoods = foods
+    .filter((food) => food.isFavorite || food.isEssential)
     .sort((a, b) => compareFoodsForSearch(a, b, ""))
     .slice(0, 12);
 
@@ -98,12 +101,7 @@ export default function AddMealPage() {
   function selectFood(food: Food) {
     setSelectedFoodId(food.id);
     setQuery(food.name);
-
-    if (food.servingSizeG) {
-      setQuantityG(String(food.servingSizeG));
-    } else {
-      setQuantityG("100");
-    }
+    setQuantityG(food.servingSizeG ? String(food.servingSizeG) : "100");
   }
 
   function addItem(event?: FormEvent<HTMLFormElement>) {
@@ -137,549 +135,500 @@ export default function AddMealPage() {
       items,
     });
 
-    if (destination === "dashboard") {
-      router.push("/");
-    } else {
-      router.push("/journal");
-    }
+    router.push(destination === "dashboard" ? "/" : "/journal");
   }
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-start">
-          <div>
-            <p className="text-sm font-bold text-[#E94B4B]">Nouveau repas</p>
-            <h1 className="mt-2 text-4xl font-black tracking-tight text-[#171717] md:text-5xl">
-              Ajouter un repas
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#7A746E] md:text-base">
-              Recherche un aliment, choisis la quantité, puis construis un repas
-              simple et clair.
+      <div className="space-y-5">
+        <section className="pt-2">
+          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+            Nouveau repas
+          </p>
+
+          <div className="mt-3 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="mt-display text-[50px] font-semibold leading-[0.9] tracking-[-0.055em] text-[var(--mt-ink)]">
+                Ajouter
+              </h1>
+              <p className="mt-4 max-w-[290px] text-[15px] leading-7 text-[var(--mt-ink-2)]">
+                Choisis un aliment, indique la quantité, puis construis ton
+                repas étape par étape.
+              </p>
+            </div>
+
+            <div className="mt-card shrink-0 rounded-[22px] p-3 text-center">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mt-ink-2)]">
+                Total
+              </p>
+              <p className="mt-display mt-1 text-[30px] font-semibold leading-none tracking-[-0.04em] text-[var(--mt-ink)]">
+                {formatMacro(totals.calories, "")}
+              </p>
+              <p className="text-[10px] font-black uppercase text-[var(--mt-ink-3)]">
+                kcal
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-card overflow-hidden rounded-[28px]">
+          <div className="bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
+            <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/62">
+              Étape 1
             </p>
+
+            <h2 className="mt-display mt-2 text-[32px] font-semibold leading-none tracking-[-0.04em]">
+              {getMealStepLabel(items.length)}
+            </h2>
+
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <SummaryGlass label="Prot." value={formatMacro(totals.proteinG, "g")} />
+              <SummaryGlass label="Gluc." value={formatMacro(totals.carbsG, "g")} />
+              <SummaryGlass label="Lip." value={formatMacro(totals.fatG, "g")} />
+            </div>
           </div>
 
-          <button
-            onClick={() => setIncludeFullDatabase((current) => !current)}
-            className={`w-fit rounded-full px-5 py-3 text-sm font-bold shadow-sm transition ${
-              includeFullDatabase
-                ? "bg-[#E94B4B] text-white shadow-[0_16px_30px_rgba(233,75,75,0.22)]"
-                : "bg-white text-[#171717] ring-1 ring-black/5 hover:bg-[#FFF2EE]"
-            }`}
-          >
-            {includeFullDatabase ? "Base complète active" : "Inclure Ciqual complet"}
-          </button>
-        </header>
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <label>
+                <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
+                  Date
+                </span>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  className="AddInput"
+                />
+              </label>
 
-        <section className="mb-5 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[34px] bg-white p-5 shadow-[0_16px_38px_rgba(28,21,18,0.06)] ring-1 ring-black/5">
-            <p className="text-sm font-semibold text-[#7A746E]">Date</p>
-            <input
-              type="date"
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-              className="input mt-3"
-            />
+              <label>
+                <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
+                  Nom
+                </span>
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  className="AddInput"
+                  placeholder="Optionnel"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4">
+              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
+                Type de repas
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                {mealTypeOrder.map((mealType) => (
+                  <button
+                    key={mealType}
+                    type="button"
+                    onClick={() => setType(mealType)}
+                    className={`rounded-[18px] px-3 py-3 text-[12px] font-black ${
+                      type === mealType
+                        ? "bg-[var(--mt-rouge)] text-white shadow-[var(--mt-shadow-red)]"
+                        : "bg-[var(--mt-card-soft)] text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
+                    }`}
+                  >
+                    {mealTypeLabels[mealType]}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div className="rounded-[34px] bg-white p-5 shadow-[0_16px_38px_rgba(28,21,18,0.06)] ring-1 ring-black/5">
-            <p className="text-sm font-semibold text-[#7A746E]">Type de repas</p>
-            <select
-              value={type}
-              onChange={(event) => setType(event.target.value as MealType)}
-              className="input mt-3"
+        <section className="mt-card rounded-[28px] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+                Étape 2
+              </p>
+              <h2 className="mt-display mt-1 text-[26px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
+                Choisir un aliment
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIncludeFullDatabase((current) => !current)}
+              className={`rounded-full px-3 py-2 text-[11px] font-black ${
+                includeFullDatabase
+                  ? "bg-[var(--mt-ink)] text-white"
+                  : "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)] ring-1 ring-[var(--mt-rouge-soft)]"
+              }`}
             >
-              {Object.entries(mealTypeLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              {includeFullDatabase ? "Base complète" : "Ciqual"}
+            </button>
           </div>
 
-          <div className="rounded-[34px] bg-white p-5 shadow-[0_16px_38px_rgba(28,21,18,0.06)] ring-1 ring-black/5">
-            <p className="text-sm font-semibold text-[#7A746E]">Nom optionnel</p>
+          {quickFoods.length > 0 && !selectedFood && query.trim().length === 0 && (
+            <div className="mt-4">
+              <p className="mb-2 text-[12px] font-black text-[var(--mt-ink)]">
+                Rapides
+              </p>
+
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {quickFoods.map((food) => (
+                  <button
+                    key={food.id}
+                    type="button"
+                    onClick={() => selectFood(food)}
+                    className="shrink-0 rounded-full bg-white px-4 py-2.5 text-[12px] font-black text-[var(--mt-ink)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
+                  >
+                    {food.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <label className="relative mt-4 block">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--mt-ink-3)]">
+              <SearchIcon />
+            </span>
+
             <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="input mt-3"
-              placeholder="Ex : dîner léger, post-training..."
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setSelectedFoodId("");
+              }}
+              className="w-full rounded-[20px] border border-[var(--mt-line)] bg-[var(--mt-card-soft)] py-4 pl-12 pr-4 text-[15px] font-bold text-[var(--mt-ink)] outline-none placeholder:text-[var(--mt-ink-3)]"
+              placeholder="Œuf, poulet, riz..."
             />
-          </div>
-        </section>
+          </label>
 
-        <section className="grid gap-5 xl:grid-cols-[1fr_0.82fr]">
-          <div className="space-y-5">
-            <div className="rounded-[42px] bg-white p-6 shadow-[0_24px_60px_rgba(28,21,18,0.08)] ring-1 ring-black/5">
-              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-                <div>
-                  <h2 className="text-2xl font-black tracking-tight text-[#171717]">
-                    Choisir un aliment
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-[#7A746E]">
-                    Les aliments essentiels et favoris remontent en premier.
+          {query.trim().length > 0 && !selectedFood && (
+            <div className="mt-4 grid gap-2">
+              {filteredFoods.length === 0 ? (
+                <div className="rounded-[22px] border border-dashed border-[var(--mt-line-2)] bg-[var(--mt-card-soft)] p-5 text-center">
+                  <p className="mt-display text-[20px] font-semibold text-[var(--mt-ink)]">
+                    Aucun aliment
+                  </p>
+                  <p className="mt-2 text-[13px] leading-6 text-[var(--mt-ink-2)]">
+                    Essaie d’élargir la recherche ou d’inclure la base complète.
                   </p>
                 </div>
-              </div>
-
-              {favoriteFoods.length > 0 && (
-                <QuickFoodSection
-                  title="Favoris rapides"
-                  foods={favoriteFoods}
-                  onSelect={selectFood}
-                  tone="dark"
-                />
-              )}
-
-              {essentialFoods.length > 0 && (
-                <QuickFoodSection
-                  title="Essentiels rapides"
-                  foods={essentialFoods}
-                  onSelect={selectFood}
-                  tone="red"
-                />
-              )}
-
-              <form onSubmit={addItem} className="mt-6 space-y-4">
-                <label className="block">
-                  <span className="mb-2 block text-sm font-bold text-[#171717]">
-                    Rechercher
-                  </span>
-                  <input
-                    value={query}
-                    onChange={(event) => {
-                      setQuery(event.target.value);
-                      setSelectedFoodId("");
-                    }}
-                    className="input"
-                    placeholder="Ex : œuf, poulet, riz, banane..."
+              ) : (
+                filteredFoods.map((food) => (
+                  <FoodResult
+                    key={food.id}
+                    food={food}
+                    onSelect={() => selectFood(food)}
                   />
-                </label>
+                ))
+              )}
+            </div>
+          )}
 
-                {query.trim().length > 0 && !selectedFood && (
-                  <div className="max-h-[420px] space-y-2 overflow-y-auto rounded-[30px] bg-[#FFFAF5] p-2 ring-1 ring-black/5">
-                    {filteredFoods.length === 0 ? (
-                      <div className="p-5 text-sm text-[#7A746E]">
-                        Aucun aliment trouvé. Tu peux l’ajouter dans la page
-                        Aliments ou l’importer via Open Food Facts.
-                      </div>
-                    ) : (
-                      filteredFoods.map((food) => (
-                        <FoodSearchResult
-                          key={food.id}
-                          food={food}
-                          onSelect={() => selectFood(food)}
-                        />
-                      ))
-                    )}
-                  </div>
-                )}
+          {selectedFood && (
+            <form onSubmit={addItem} className="mt-4">
+              <SelectedFoodCard
+                food={selectedFood}
+                quantityG={quantityG}
+                onChangeQuantity={setQuantityG}
+                previewItem={previewItem}
+                onClear={() => {
+                  setSelectedFoodId("");
+                  setQuery("");
+                  setQuantityG("");
+                }}
+              />
 
-                {selectedFood && (
-                  <div className="rounded-[34px] bg-[#FFFAF5] p-5 ring-1 ring-black/5">
-                    <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-                      <div>
-                        <p className="text-sm font-bold text-[#E94B4B]">
-                          Aliment sélectionné
-                        </p>
+              <button
+                type="submit"
+                disabled={!selectedFood || parseQuantity(quantityG) <= 0}
+                className="mt-btn-primary mt-4 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Ajouter au repas
+              </button>
+            </form>
+          )}
+        </section>
 
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <h3 className="text-xl font-black text-[#171717]">
-                            {selectedFood.name}
-                          </h3>
+        <section className="mt-card rounded-[28px] p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+                Étape 3
+              </p>
+              <h2 className="mt-display mt-1 text-[26px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
+                Repas en cours
+              </h2>
+            </div>
 
-                          {selectedFood.isEssential && (
-                            <Badge tone="red">Essentiel</Badge>
-                          )}
-
-                          {selectedFood.isFavorite && (
-                            <Badge tone="dark">Favori</Badge>
-                          )}
-                        </div>
-
-                        <p className="mt-2 text-sm text-[#7A746E]">
-                          {selectedFood.brand ? `${selectedFood.brand} · ` : ""}
-                          {selectedFood.category}
-                        </p>
-
-                        {selectedFood.officialName &&
-                          selectedFood.officialName !== selectedFood.name && (
-                            <p className="mt-1 text-xs leading-5 text-[#9B948E]">
-                              Nom officiel : {selectedFood.officialName}
-                            </p>
-                          )}
-
-                        <p className="mt-1 text-xs text-[#9B948E]">
-                          Source : {getSourceLabel(selectedFood.source)}
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedFoodId("");
-                          setQuery("");
-                          setQuantityG("");
-                        }}
-                        className="rounded-full bg-white px-4 py-2 text-xs font-bold text-[#171717] shadow-sm ring-1 ring-black/5 hover:bg-[#FFF2EE]"
-                      >
-                        Changer
-                      </button>
-                    </div>
-
-                    <div className="mt-5">
-                      <label className="block">
-                        <span className="mb-2 block text-sm font-bold text-[#171717]">
-                          Quantité en grammes
-                        </span>
-                        <input
-                          value={quantityG}
-                          onChange={(event) => setQuantityG(event.target.value)}
-                          className="input"
-                          placeholder="Ex : 150"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {selectedFood.servingSizeG && (
-                        <QuantityButton
-                          label={`${selectedFood.servingName || "Portion"} · ${
-                            selectedFood.servingSizeG
-                          } g`}
-                          onClick={() =>
-                            setQuantityG(String(selectedFood.servingSizeG))
-                          }
-                        />
-                      )}
-
-                      {[50, 100, 150, 200].map((quantity) => (
-                        <QuantityButton
-                          key={quantity}
-                          label={`${quantity} g`}
-                          onClick={() => setQuantityG(String(quantity))}
-                        />
-                      ))}
-                    </div>
-
-                    {previewItem && (
-                      <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-                        <PreviewStat
-                          label="Calories"
-                          value={previewItem.calories}
-                          suffix="kcal"
-                        />
-                        <PreviewStat
-                          label="Protéines"
-                          value={previewItem.proteinG}
-                          suffix="g"
-                        />
-                        <PreviewStat
-                          label="Glucides"
-                          value={previewItem.carbsG}
-                          suffix="g"
-                        />
-                        <PreviewStat
-                          label="Lipides"
-                          value={previewItem.fatG}
-                          suffix="g"
-                        />
-                      </div>
-                    )}
-
-                    {!isFoodComplete(selectedFood) && (
-                      <p className="mt-4 rounded-[24px] border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900">
-                        Cet aliment a des valeurs nutritionnelles incomplètes.
-                        Les totaux du repas peuvent être partiels.
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                <button
-                  disabled={!selectedFood || parseQuantity(quantityG) <= 0}
-                  className="w-full rounded-[24px] bg-[#E94B4B] px-5 py-4 text-sm font-black text-white shadow-[0_18px_34px_rgba(233,75,75,0.26)] transition hover:bg-[#B92D35] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Ajouter au repas
-                </button>
-              </form>
+            <div className="rounded-full bg-[var(--mt-rouge-wash)] px-3 py-2 text-[12px] font-black text-[var(--mt-rouge-deep)]">
+              {formatMacro(totals.calories, " kcal")}
             </div>
           </div>
 
-          <aside className="xl:sticky xl:top-8 xl:self-start">
-            <div className="rounded-[42px] bg-white p-6 shadow-[0_24px_60px_rgba(28,21,18,0.08)] ring-1 ring-black/5">
-              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start xl:flex-col">
-                <div>
-                  <p className="text-sm font-bold text-[#E94B4B]">
-                    Repas en cours
-                  </p>
-                  <h2 className="mt-1 text-3xl font-black tracking-tight text-[#171717]">
-                    {items.length === 0
-                      ? "Encore vide"
-                      : `${items.length} aliment(s)`}
-                  </h2>
-                  <p className="mt-2 text-sm text-[#7A746E]">
-                    {mealTypeLabels[type]}
-                  </p>
-                </div>
-
-                <div className="rounded-full bg-[#FFE1DD] px-4 py-2 text-sm font-black text-[#B92D35]">
-                  {formatMacro(totals.calories, " kcal")}
-                </div>
+          <div className="mt-5">
+            {items.length === 0 ? (
+              <div className="rounded-[22px] border border-dashed border-[var(--mt-line-2)] bg-[var(--mt-card-soft)] p-5 text-center">
+                <p className="mt-display text-[21px] font-semibold text-[var(--mt-ink)]">
+                  Encore vide
+                </p>
+                <p className="mt-2 text-[13px] leading-6 text-[var(--mt-ink-2)]">
+                  Ajoute un premier aliment pour construire le repas.
+                </p>
               </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <Total label="Protéines" value={totals.proteinG} suffix="g" />
-                <Total label="Glucides" value={totals.carbsG} suffix="g" />
-                <Total label="Lipides" value={totals.fatG} suffix="g" />
-                <Total
-                  label="Incomplets"
-                  value={totals.incompleteItems}
-                  suffix=""
-                />
+            ) : (
+              <div className="grid gap-3">
+                {items.map((item) => (
+                  <MealItemRow
+                    key={item.id}
+                    item={item}
+                    onRemove={() => removeItem(item.id)}
+                  />
+                ))}
               </div>
+            )}
+          </div>
 
-              <div className="mt-6 space-y-3">
-                {items.length === 0 ? (
-                  <div className="rounded-[30px] border border-dashed border-black/10 bg-[#FFFAF5] p-8 text-center">
-                    <p className="font-black text-[#171717]">
-                      Ton repas est vide
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-[#7A746E]">
-                      Sélectionne un aliment à gauche pour commencer.
-                    </p>
-                  </div>
-                ) : (
-                  items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-[28px] bg-[#FFFAF5] p-4 ring-1 ring-black/5"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-black text-[#171717]">
-                            {item.foodNameSnapshot}
-                          </p>
+          <div className="mt-5 grid gap-2">
+            <button
+              type="button"
+              onClick={() => saveMeal("dashboard")}
+              disabled={items.length === 0}
+              className="mt-btn-primary disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Enregistrer le repas
+            </button>
 
-                          {item.brandSnapshot && (
-                            <p className="mt-1 text-sm text-[#7A746E]">
-                              {item.brandSnapshot}
-                            </p>
-                          )}
-
-                          <p className="mt-1 text-sm text-[#7A746E]">
-                            {item.quantityG} g
-                          </p>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="font-black text-[#171717]">
-                            {formatMacro(item.calories, " kcal")}
-                          </p>
-                          <p className="mt-1 text-xs text-[#7A746E]">
-                            {formatMacro(item.proteinG, " g")} P
-                          </p>
-
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.id)}
-                            className="mt-3 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#B92D35] ring-1 ring-red-100 hover:bg-[#FFE1DD]"
-                          >
-                            Retirer
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                <button
-                  onClick={() => saveMeal("dashboard")}
-                  disabled={items.length === 0}
-                  className="rounded-[24px] bg-[#E94B4B] px-5 py-4 text-sm font-black text-white shadow-[0_18px_34px_rgba(233,75,75,0.26)] transition hover:bg-[#B92D35] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Enregistrer et revenir au dashboard
-                </button>
-
-                <button
-                  onClick={() => saveMeal("journal")}
-                  disabled={items.length === 0}
-                  className="rounded-[24px] bg-[#FFFAF5] px-5 py-4 text-sm font-black text-[#171717] ring-1 ring-black/5 transition hover:bg-[#FFE1DD] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Enregistrer et voir le journal
-                </button>
-              </div>
-            </div>
-          </aside>
+            <button
+              type="button"
+              onClick={() => saveMeal("journal")}
+              disabled={items.length === 0}
+              className="rounded-[18px] bg-white px-4 py-4 text-[13px] font-black text-[var(--mt-ink)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Enregistrer et voir le journal
+            </button>
+          </div>
         </section>
+
+        <div className="h-10" />
       </div>
     </AppShell>
   );
 }
 
-function QuickFoodSection({
-  title,
-  foods,
-  onSelect,
-  tone,
-}: {
-  title: string;
-  foods: Food[];
-  onSelect: (food: Food) => void;
-  tone: "red" | "dark";
-}) {
+function SummaryGlass({ label, value }: { label: string; value: string }) {
   return (
-    <div className="mt-6">
-      <p className="mb-3 text-sm font-black text-[#171717]">{title}</p>
-
-      <div className="flex flex-wrap gap-2">
-        {foods.map((food) => (
-          <button
-            key={food.id}
-            type="button"
-            onClick={() => onSelect(food)}
-            className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-              tone === "red"
-                ? "bg-[#FFE1DD] text-[#B92D35] hover:bg-[#FFD2CB]"
-                : "bg-[#FFFAF5] text-[#171717] ring-1 ring-black/5 hover:bg-[#FFF2EE]"
-            }`}
-          >
-            {food.name}
-          </button>
-        ))}
-      </div>
+    <div className="rounded-[18px] border border-white/18 bg-white/14 p-3 backdrop-blur">
+      <p className="text-[10.5px] font-bold text-white/72">{label}</p>
+      <p className="mt-1 font-[var(--mt-display)] text-[21px] font-semibold leading-none">
+        {value}
+      </p>
     </div>
   );
 }
 
-function FoodSearchResult({
-  food,
-  onSelect,
-}: {
-  food: Food;
-  onSelect: () => void;
-}) {
+function FoodResult({ food, onSelect }: { food: Food; onSelect: () => void }) {
   const complete = isFoodComplete(food);
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      className="w-full rounded-[24px] bg-white p-4 text-left shadow-sm ring-1 ring-black/5 transition hover:bg-[#FFF2EE]"
+      className="flex w-full items-center gap-3 rounded-[22px] border border-[var(--mt-line)] bg-white p-3 text-left shadow-[var(--mt-shadow-sm)]"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-black text-[#171717]">{food.name}</p>
+      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] bg-gradient-to-br from-[var(--mt-rouge-lit)] to-[var(--mt-rouge-deep)] text-white">
+        <span className="mt-display text-[20px] font-semibold">
+          {food.name.slice(0, 1).toUpperCase()}
+        </span>
+      </div>
 
-            {food.isEssential && <Badge tone="red">Essentiel</Badge>}
-            {food.isFavorite && <Badge tone="dark">Favori</Badge>}
-          </div>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-[14px] font-black text-[var(--mt-ink)]">
+          {food.name}
+        </p>
+        <p className="mt-1 line-clamp-1 text-[11px] font-bold text-[var(--mt-ink-2)]">
+          {food.brand ? `${food.brand} · ` : ""}
+          {food.category}
+        </p>
+      </div>
 
-          <p className="mt-1 text-sm text-[#7A746E]">
-            {food.brand ? `${food.brand} · ` : ""}
-            {food.category}
-          </p>
-
-          {food.officialName && food.officialName !== food.name && (
-            <p className="mt-1 text-xs leading-5 text-[#9B948E]">
-              Nom officiel : {food.officialName}
-            </p>
-          )}
-
-          <p className="mt-1 text-xs text-[#9B948E]">
-            Source : {getSourceLabel(food.source)}
-          </p>
-        </div>
-
-        <span
-          className={`shrink-0 rounded-full px-2 py-1 text-xs font-bold ${
+      <div className="text-right">
+        <p className="mt-display text-[21px] font-semibold leading-none text-[var(--mt-ink)]">
+          {food.caloriesPer100g ?? "—"}
+        </p>
+        <p className="mt-1 text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
+          kcal
+        </p>
+        <p
+          className={`mt-2 rounded-full px-2 py-1 text-[9px] font-black ${
             complete
-              ? "bg-green-100 text-green-800"
-              : "bg-orange-100 text-orange-800"
+              ? "bg-[var(--mt-success-soft)] text-[var(--mt-success)]"
+              : "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]"
           }`}
         >
-          {complete ? "Complet" : "À compléter"}
-        </span>
+          {complete ? "OK" : "Partiel"}
+        </p>
       </div>
     </button>
   );
 }
 
-function Badge({
-  children,
-  tone,
+function SelectedFoodCard({
+  food,
+  quantityG,
+  onChangeQuantity,
+  previewItem,
+  onClear,
 }: {
-  children: React.ReactNode;
-  tone: "red" | "dark";
+  food: Food;
+  quantityG: string;
+  onChangeQuantity: (value: string) => void;
+  previewItem: MealItem | null;
+  onClear: () => void;
 }) {
   return (
-    <span
-      className={`rounded-full px-2 py-1 text-xs font-bold ${
-        tone === "red"
-          ? "bg-[#E94B4B] text-white"
-          : "bg-[#171717] text-white"
-      }`}
-    >
-      {children}
-    </span>
+    <div className="rounded-[24px] bg-[var(--mt-card-soft)] p-4 ring-1 ring-[var(--mt-line)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--mt-rouge)]">
+            Sélectionné
+          </p>
+          <h3 className="mt-2 text-[19px] font-black leading-tight tracking-[-0.02em] text-[var(--mt-ink)]">
+            {food.name}
+          </h3>
+          <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-2)]">
+            {food.brand ? `${food.brand} · ` : ""}
+            {getSourceLabel(food.source)}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClear}
+          className="rounded-full bg-white px-3 py-2 text-[11px] font-black text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
+        >
+          Changer
+        </button>
+      </div>
+
+      <label className="mt-4 block">
+        <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
+          Quantité en grammes
+        </span>
+        <input
+          value={quantityG}
+          onChange={(event) => onChangeQuantity(event.target.value)}
+          className="AddInput"
+          placeholder="Ex : 150"
+        />
+      </label>
+
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+        {food.servingSizeG && (
+          <QuantityChip
+            label={`${food.servingName || "Portion"} · ${food.servingSizeG}g`}
+            onClick={() => onChangeQuantity(String(food.servingSizeG))}
+          />
+        )}
+
+        {[50, 100, 150, 200].map((quantity) => (
+          <QuantityChip
+            key={quantity}
+            label={`${quantity}g`}
+            onClick={() => onChangeQuantity(String(quantity))}
+          />
+        ))}
+      </div>
+
+      {previewItem && (
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          <PreviewMini label="Kcal" value={formatMacro(previewItem.calories, "")} />
+          <PreviewMini label="Prot." value={formatMacro(previewItem.proteinG, "g")} />
+          <PreviewMini label="Gluc." value={formatMacro(previewItem.carbsG, "g")} />
+          <PreviewMini label="Lip." value={formatMacro(previewItem.fatG, "g")} />
+        </div>
+      )}
+
+      {!isFoodComplete(food) && (
+        <p className="mt-4 rounded-[18px] bg-[var(--mt-warn-soft)] p-3 text-[12px] font-bold leading-5 text-[var(--mt-warn)]">
+          Valeurs nutritionnelles incomplètes : les totaux peuvent être partiels.
+        </p>
+      )}
+    </div>
   );
 }
 
-function QuantityButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
+function QuantityChip({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#171717] ring-1 ring-black/5 hover:bg-[#FFF2EE]"
+      className="shrink-0 rounded-full bg-white px-3 py-2 text-[11px] font-black text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
     >
       {label}
     </button>
   );
 }
 
-function PreviewStat({
-  label,
-  value,
-  suffix,
-}: {
-  label: string;
-  value: number | null;
-  suffix: string;
-}) {
+function PreviewMini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/5">
-      <p className="text-xs font-semibold text-[#7A746E]">{label}</p>
-      <p className="mt-1 font-black text-[#171717]">
-        {value ?? "—"} {value !== null ? suffix : ""}
+    <div className="rounded-[16px] bg-white p-2.5 text-center ring-1 ring-[var(--mt-line)]">
+      <p className="text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
+        {label}
       </p>
+      <p className="mt-1 text-[12px] font-black text-[var(--mt-ink)]">{value}</p>
     </div>
   );
 }
 
-function Total({
-  label,
-  value,
-  suffix,
+function MealItemRow({
+  item,
+  onRemove,
 }: {
-  label: string;
-  value: number | null;
-  suffix: string;
+  item: MealItem;
+  onRemove: () => void;
 }) {
   return (
-    <div className="rounded-[24px] bg-[#FFFAF5] p-4 ring-1 ring-black/5">
-      <p className="text-xs font-semibold text-[#7A746E]">{label}</p>
-      <p className="mt-1 text-xl font-black text-[#171717]">
-        {value ?? "—"} {value !== null ? suffix : ""}
-      </p>
+    <div className="flex items-center gap-3 rounded-[22px] border border-[var(--mt-line)] bg-white p-3 shadow-[var(--mt-shadow-sm)]">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[15px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
+        <span className="mt-display text-[18px] font-semibold">
+          {item.foodNameSnapshot.slice(0, 1).toUpperCase()}
+        </span>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-[14px] font-black text-[var(--mt-ink)]">
+          {item.foodNameSnapshot}
+        </p>
+        <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-2)]">
+          {item.quantityG} g · {formatMacro(item.proteinG, "g")} P
+        </p>
+      </div>
+
+      <div className="text-right">
+        <p className="mt-display text-[20px] font-semibold leading-none text-[var(--mt-ink)]">
+          {formatMacro(item.calories, "")}
+        </p>
+        <p className="mt-1 text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
+          kcal
+        </p>
+
+        <button
+          type="button"
+          onClick={onRemove}
+          className="mt-2 text-[11px] font-black text-[var(--mt-rouge)]"
+        >
+          Retirer
+        </button>
+      </div>
     </div>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4-4" />
+    </svg>
   );
 }
