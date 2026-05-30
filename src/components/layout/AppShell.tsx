@@ -39,11 +39,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="mt-app-bg">
       <div className="mt-phone-shell">
         {!isDashboard && (
-          <header className="mt-topbar px-5 py-3">
+          <header className="mt-topbar px-5">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-[16px] bg-[var(--mt-rouge)] font-[var(--mt-display)] text-lg font-semibold text-white shadow-[var(--mt-shadow-red)]">
-                  M
+                <div className="grid h-11 w-11 overflow-hidden rounded-[16px] bg-[var(--mt-rouge)] shadow-[var(--mt-shadow-red)]">
+                  <img
+                    src="/brand/macrotrack-logo.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
 
                 <div>
@@ -68,7 +73,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
         )}
 
-        <main className={isDashboard ? "" : "mt-main"}>{children}</main>
+        <main className={isDashboard ? "mt-dashboard-main" : "mt-main"}>{children}</main>
 
         <nav className="mt-bottom-nav">
           <BottomNavItem
