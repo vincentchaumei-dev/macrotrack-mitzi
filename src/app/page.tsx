@@ -290,15 +290,46 @@ export default function Home() {
 
             <div className="mt-week">
               {weeklyData.map((day) => (
-                <div
+                <button
                   key={day.date}
+                  type="button"
+                  onClick={() => setSelectedDate(day.date)}
+                  aria-pressed={day.active}
                   className={`mt-week-day ${day.active ? "mt-week-active" : ""}`}
                 >
                   <div className="mt-week-label">{day.label}</div>
                   <div className="mt-week-num">{day.number}</div>
-                </div>
+                </button>
               ))}
             </div>
+
+            <div className="mt-dashboard-date-nav">
+  <button
+    type="button"
+    onClick={goToPreviousDay}
+    className="mt-date-chip mt-date-chip--ghost"
+  >
+    <span className="mt-date-chip-arrow">←</span>
+    <span>Veille</span>
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setSelectedDate(today)}
+    className="mt-date-chip mt-date-chip--primary"
+  >
+    Aujourd’hui
+  </button>
+
+  <button
+    type="button"
+    onClick={goToNextDay}
+    className="mt-date-chip mt-date-chip--ghost"
+  >
+    <span>Demain</span>
+    <span className="mt-date-chip-arrow">→</span>
+  </button>
+</div>
 
             <div className="mt-big-cal">
               <div className="mt-big-cal-number">
@@ -345,7 +376,7 @@ export default function Home() {
                 {goalTypeLabels[profile.goalType]} · TDEE {tdee} kcal
               </p>
               <h1 className="mt-display mt-1 text-[24px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
-                Aujourd’hui
+                {selectedDateTitle}
               </h1>
             </div>
 
