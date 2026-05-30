@@ -2031,3 +2031,19 @@ a[aria-disabled="true"] {
   border: 1px solid var(--mt-line);
   box-shadow: var(--mt-shadow-sm);
 }
+
+.mt-phone-shell {
+  padding-top: env(safe-area-inset-top);
+}
+
+@supports (padding-top: max(0px)) {
+  .mt-phone-shell {
+    padding-top: max(env(safe-area-inset-top), 12px);
+  }
+}
+/* iOS safe-area fix */
+@media (max-width: 768px) {
+  .mt-phone-shell {
+    padding-top: max(env(safe-area-inset-top), 12px);
+  }
+}
