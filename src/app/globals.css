@@ -2715,3 +2715,28 @@ a {
 /* END MACROTRACK PERSONAL NOTE V7
    ========================================================= */
 
+
+/* Dashboard date navigation */
+.mt-dashboard-date-nav {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+
+.mt-dashboard-date-nav button {
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.13);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 11.5px;
+  font-weight: 900;
+  backdrop-filter: blur(10px);
+}
+
+.mt-dashboard-date-nav button:nth-child(2) {
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--mt-rouge);
+}
+

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
@@ -54,6 +54,21 @@ function getWeekDays(today: string) {
     };
   });
 }
+
+function shiftLocalDate(date: string, offset: number) {
+  const current = new Date(`${date}T12:00:00`);
+  current.setDate(current.getDate() + offset);
+  return current.toISOString().slice(0, 10);
+}
+
+function formatSelectedDate(date: string) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date(`${date}T12:00:00`));
+}
+
 
 function getMealGradient(index: number) {
   const gradients = [
@@ -141,9 +156,22 @@ export default function Home() {
   } = useNutritionStore();
 
   const today = todayLocalDate();
-  const weekDays = useMemo(() => getWeekDays(today), [today]);
-  const meals = getMealsByDate(today);
+  const [selectedDate, setSelectedDate] = useState(today);
+
+  const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
+  const meals = getMealsByDate(selectedDate);
   const totals = calculateDayTotals(meals);
+
+  const selectedDateTitle =
+    selectedDate === today ? "Aujourd’hui" : formatSelectedDate(selectedDate);
+
+  function goToPreviousDay() {
+    setSelectedDate((current) => shiftLocalDate(current, -1));
+  }
+
+  function goToNextDay() {
+    setSelectedDate((current) => shiftLocalDate(current, 1));
+  }
 
   const calories = toNumber(totals.calories);
   const protein = toNumber(totals.proteinG);
