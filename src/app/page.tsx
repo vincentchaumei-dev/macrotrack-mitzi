@@ -13,7 +13,12 @@ import {
   mealTypeLabels,
   todayLocalDate,
 } from "@/lib/nutrition";
-import { Meal } from "@/types/nutrition";
+import { Food, Meal, MealType } from "@/types/nutrition";
+
+const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+
+const personalMessage =
+  "Bienvenue sur l'app beauty, wlh t parfaite, j'ai essayé de rendre le truc le plus didactique possible si t'as question reach me : tu me call jour et nuit ou au pire tu me dis je prends un vol pour Bilbao, hésite pas à me dire, je suis tout à ta disposition, pas de culpabilisation, juste un tracking rien ne sert d'être parfait sur une journée et culpabiliser une autre, c'est un tout, et tu fais déjà le plus important : me parler, t parfait et somptueuse, keep up la cadence chérie t'es o top";
 
 function toNumber(value: number | null | undefined) {
   return typeof value === "number" ? value : 0;
@@ -61,6 +66,33 @@ function getMealGradient(index: number) {
   return gradients[index % gradients.length];
 }
 
+function getRecentFoods(meals: Meal[], foods: Food[], limit = 8) {
+  const foodsById = new Map(foods.map((food) => [food.id, food]));
+  const seen = new Set<string>();
+  const recentFoods: Food[] = [];
+
+  [...meals]
+    .sort((a, b) => {
+      const aTime = a.updatedAt || a.createdAt;
+      const bTime = b.updatedAt || b.createdAt;
+      return bTime.localeCompare(aTime);
+    })
+    .forEach((meal) => {
+      [...meal.items].reverse().forEach((item) => {
+        if (seen.has(item.foodId)) return;
+
+        const food = foodsById.get(item.foodId);
+
+        if (!food) return;
+
+        seen.add(item.foodId);
+        recentFoods.push(food);
+      });
+    });
+
+  return recentFoods.slice(0, limit);
+}
+
 function getCoachText({
   caloriesRemaining,
   protein,
@@ -75,22 +107,22 @@ function getCoachText({
   if (caloriesRemaining > 0) {
     return (
       <>
-        Il te reste <b>{caloriesRemaining} kcal</b>
+        Il reste <b>{caloriesRemaining} kcal</b>
         {proteinRemaining > 0 ? (
           <>
             {" "}
             et <b>{proteinRemaining} g de protéines</b>
           </>
         ) : null}{" "}
-        pour atteindre ton objectif. Belle journée jusqu’ici.
+        pour atteindre la base du jour.
       </>
     );
   }
 
   return (
     <>
-      Tu es légèrement au-dessus de l’objectif. Rien de grave : on regarde
-      surtout la <b>tendance</b>, pas une journée isolée.
+      Un peu au-dessus aujourd’hui. Rien de dramatique : ce qui compte, c’est la{" "}
+      <b>moyenne</b> et la régularité.
     </>
   );
 }
@@ -101,6 +133,8 @@ export default function Home() {
   const {
     profile,
     goals,
+    foods,
+    meals: allMeals,
     getMealsByDate,
     hasLoaded,
     onboardingCompleted,
@@ -117,6 +151,7 @@ export default function Home() {
   const fat = toNumber(totals.fatG);
 
   const caloriesRemaining = goals.calories - calories;
+  const proteinRemaining = Math.max(0, goals.proteinG - protein);
 
   const caloriePercent = getPercent(calories, goals.calories);
   const proteinPercent = getPercent(protein, goals.proteinG);
@@ -124,6 +159,43 @@ export default function Home() {
   const fatPercent = getPercent(fat, goals.fatG);
 
   const tdee = calculateTdee(profile);
+
+  const weeklyData = useMemo(
+    () =>
+      weekDays.map((day) => {
+        const dayMeals = allMeals.filter((meal) => meal.date === day.date);
+        const dayTotals = calculateDayTotals(dayMeals);
+        const dayCalories = toNumber(dayTotals.calories);
+
+        return {
+          ...day,
+          calories: dayCalories,
+          percent: getPercent(dayCalories, goals.calories),
+          tracked: dayMeals.length > 0,
+        };
+      }),
+    [allMeals, goals.calories, weekDays]
+  );
+
+  const trackedDays = weeklyData.filter((day) => day.tracked).length;
+  const weeklyAverage =
+    trackedDays > 0
+      ? Math.round(
+          weeklyData.reduce((sum, day) => sum + day.calories, 0) / trackedDays
+        )
+      : 0;
+
+  const recentFoods = useMemo(
+    () => getRecentFoods(allMeals, foods, 8),
+    [allMeals, foods]
+  );
+
+  const favoriteFoods = useMemo(
+    () => foods.filter((food) => food.isFavorite).slice(0, 8),
+    [foods]
+  );
+
+  const quickFoods = recentFoods.length > 0 ? recentFoods : favoriteFoods;
 
   useEffect(() => {
     if (hasLoaded && !onboardingCompleted) {
@@ -150,15 +222,20 @@ export default function Home() {
           <div className="mt-immersive-inner">
             <div className="flex items-center justify-between pt-1">
               <div className="flex items-center gap-3">
-                <div className="grid h-[42px] w-[42px] place-items-center rounded-[14px] border border-white/25 bg-white/20 font-[var(--mt-display)] text-lg font-semibold text-white backdrop-blur">
-                  M
+                <div className="grid h-[42px] w-[42px] overflow-hidden rounded-[14px] border border-white/25 bg-white/20 backdrop-blur">
+                  <img
+                    src="/brand/macrotrack-logo.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
 
                 <div>
                   <p className="text-[11.5px] font-semibold text-white/75">
                     Bonjour,
                   </p>
-                  <p className="font-[var(--mt-display)] text-[18px] font-semibold leading-none tracking-[-0.02em] text-white">
+                  <p className="text-[18px] font-black leading-none tracking-[-0.03em] text-white">
                     MacroTrack
                   </p>
                 </div>
@@ -168,21 +245,23 @@ export default function Home() {
                 <Link
                   href="/goals"
                   className="grid h-10 w-10 place-items-center rounded-[13px] border border-white/20 bg-white/16 text-white backdrop-blur"
+                  aria-label="Objectifs"
                 >
                   <SettingsIcon />
                 </Link>
-                <button
-                  type="button"
-                  className="relative grid h-10 w-10 place-items-center rounded-[13px] border border-white/20 bg-white/16 text-white backdrop-blur"
+
+                <Link
+                  href="/settings"
+                  className="grid h-10 w-10 place-items-center rounded-[13px] border border-white/20 bg-white/16 text-white backdrop-blur"
+                  aria-label="Paramètres"
                 >
-                  <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-white" />
                   <BellIcon />
-                </button>
+                </Link>
               </div>
             </div>
 
             <div className="mt-week">
-              {weekDays.map((day) => (
+              {weeklyData.map((day) => (
                 <div
                   key={day.date}
                   className={`mt-week-day ${day.active ? "mt-week-active" : ""}`}
@@ -232,51 +311,171 @@ export default function Home() {
         <section className="mt-sheet">
           <div className="mt-sheet-grip" />
 
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
                 {goalTypeLabels[profile.goalType]} · TDEE {tdee} kcal
               </p>
-              <h1 className="mt-display mt-1 text-[24px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
+              <h1 className="mt-display mt-1 text-[24px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
                 Aujourd’hui
               </h1>
             </div>
 
-            <Link href="/journal" className="text-[12.5px] font-extrabold text-[var(--mt-rouge)]">
-              Tout voir
+            <Link
+              href="/add"
+              className="rounded-full bg-[var(--mt-rouge)] px-4 py-3 text-[12px] font-black text-white shadow-[var(--mt-shadow-red)]"
+            >
+              Ajouter
             </Link>
           </div>
 
-          <div className="mt-section-head">
-            <h2>Repas du jour</h2>
-            <Link href="/add">Ajouter</Link>
+          <div className="grid grid-cols-2 gap-3">
+            <MetricCard
+              label="Calories"
+              value={`${Math.max(0, caloriesRemaining)}`}
+              detail="restantes"
+            />
+            <MetricCard
+              label="Protéines"
+              value={`${proteinRemaining}g`}
+              detail="restantes"
+            />
           </div>
 
-          {meals.length === 0 ? (
-            <div className="mt-card mb-4 p-5 text-center">
-              <p className="mt-display text-xl font-semibold text-[var(--mt-ink)]">
-                Aucun repas enregistré
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[var(--mt-ink-2)]">
-                Ajoute un repas ou utilise un repas type pour commencer la
-                journée simplement.
-              </p>
-              <div className="mt-4 grid gap-2">
-                <Link href="/add" className="mt-btn-primary">
-                  Ajouter un repas
-                </Link>
-                <Link href="/recipes" className="mt-btn-soft text-center">
-                  Voir les repas types
-                </Link>
+          <section className="mt-card mt-4 rounded-[24px] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--mt-rouge)]">
+                  Semaine
+                </p>
+                <h2 className="mt-display mt-1 text-[22px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
+                  Vue rapide
+                </h2>
+              </div>
+
+              <div className="text-right">
+                <p className="text-[18px] font-black text-[var(--mt-ink)]">
+                  {trackedDays}/7
+                </p>
+                <p className="text-[10px] font-black uppercase text-[var(--mt-ink-3)]">
+                  jours
+                </p>
               </div>
             </div>
-          ) : (
-            meals.map((meal, index) => (
-              <MealRow key={meal.id} meal={meal} index={index} />
-            ))
+
+            <div className="mt-4 grid grid-cols-7 gap-1.5">
+              {weeklyData.map((day) => (
+                <div key={day.date} className="text-center">
+                  <div className="mx-auto flex h-16 w-full max-w-[30px] items-end rounded-full bg-[var(--mt-card-soft)] p-1 ring-1 ring-[var(--mt-line)]">
+                    <div
+                      className={`w-full rounded-full ${
+                        day.active
+                          ? "bg-[var(--mt-rouge)]"
+                          : "bg-[var(--mt-rouge-soft)]"
+                      }`}
+                      style={{ height: `${Math.max(8, day.percent)}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-[10px] font-black text-[var(--mt-ink-3)]">
+                    {day.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-[12.5px] font-bold leading-6 text-[var(--mt-ink-2)]">
+              Moyenne suivie :{" "}
+              <span className="font-black text-[var(--mt-ink)]">
+                {trackedDays > 0 ? `${weeklyAverage} kcal` : "pas encore assez de données"}
+              </span>
+            </p>
+          </section>
+
+          <section className="mt-card mt-4 rounded-[24px] p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--mt-rouge)]">
+                  Repas
+                </p>
+                <h2 className="mt-display mt-1 text-[22px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
+                  Journée
+                </h2>
+              </div>
+
+              <Link
+                href="/journal"
+                className="text-[12px] font-black text-[var(--mt-rouge)]"
+              >
+                Journal
+              </Link>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              {mealTypeOrder.map((mealType, index) => (
+                <MealTypeCard
+                  key={mealType}
+                  mealType={mealType}
+                  meals={meals.filter((meal) => meal.type === mealType)}
+                  index={index}
+                />
+              ))}
+            </div>
+          </section>
+
+          {quickFoods.length > 0 && (
+            <section className="mt-card mt-4 rounded-[24px] p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--mt-rouge)]">
+                    Ajout rapide
+                  </p>
+                  <h2 className="mt-display mt-1 text-[22px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
+                    {recentFoods.length > 0 ? "Récents" : "Favoris"}
+                  </h2>
+                </div>
+
+                <Link
+                  href="/add"
+                  className="text-[12px] font-black text-[var(--mt-rouge)]"
+                >
+                  Ajouter
+                </Link>
+              </div>
+
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+                {quickFoods.map((food) => (
+                  <Link
+                    key={food.id}
+                    href="/add"
+                    className="min-w-[132px] rounded-[20px] bg-[var(--mt-card-soft)] p-3 ring-1 ring-[var(--mt-line)]"
+                  >
+                    <div className="grid h-9 w-9 place-items-center rounded-[13px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
+                      <span className="text-[15px] font-black">
+                        {food.name.slice(0, 1).toUpperCase()}
+                      </span>
+                    </div>
+                    <p className="mt-3 line-clamp-2 text-[12px] font-black leading-tight text-[var(--mt-ink)]">
+                      {food.name}
+                    </p>
+                    <p className="mt-2 text-[10px] font-bold text-[var(--mt-ink-3)]">
+                      {food.servingSizeG
+                        ? `${food.servingName || "Portion"} · ${food.servingSizeG}g`
+                        : `${food.caloriesPer100g ?? "—"} kcal`}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
 
-          <div className="mt-insight">
+          <section className="mt-card mt-4 rounded-[24px] p-4">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--mt-rouge)]">
+              Petit mot pour toi
+            </p>
+            <p className="mt-personal-note">{personalMessage}</p>
+          </section>
+
+          <div className="mt-insight mt-4">
             <div className="mt-insight-icon">
               <LightIcon />
             </div>
@@ -321,46 +520,96 @@ function MacroGlass({
   );
 }
 
-function MealRow({ meal, index }: { meal: Meal; index: number }) {
-  const totals = calculateDayTotals([meal]);
+function MetricCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="mt-card rounded-[24px] p-4">
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mt-ink-3)]">
+        {label}
+      </p>
+      <p className="mt-2 text-[26px] font-black tracking-[-0.05em] text-[var(--mt-ink)]">
+        {value}
+      </p>
+      <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-2)]">
+        {detail}
+      </p>
+    </div>
+  );
+}
+
+function MealTypeCard({
+  mealType,
+  meals,
+  index,
+}: {
+  mealType: MealType;
+  meals: Meal[];
+  index: number;
+}) {
+  const totals = calculateDayTotals(meals);
+  const hasMeals = meals.length > 0;
 
   return (
-    <Link href="/journal" className="mt-meal-row">
+    <article className="flex items-center gap-3 rounded-[22px] bg-[var(--mt-card-soft)] p-3 ring-1 ring-[var(--mt-line)]">
       <div
-        className="mt-meal-thumb"
+        className="h-12 w-12 shrink-0 rounded-[16px]"
         style={{ background: getMealGradient(index) }}
       />
 
-      <div className="mt-meal-info">
-        <div className="mt-meal-title">
-          {meal.name || mealTypeLabels[meal.type]}
-        </div>
-        <div className="mt-meal-sub">
-          <span>
-            <b>{formatMacro(totals.proteinG, "g")}</b> P
-          </span>
-          <span>
-            <b>{formatMacro(totals.carbsG, "g")}</b> G
-          </span>
-          <span>
-            <b>{formatMacro(totals.fatG, "g")}</b> L
-          </span>
-        </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[14px] font-black text-[var(--mt-ink)]">
+          {mealTypeLabels[mealType]}
+        </p>
+
+        {hasMeals ? (
+          <p className="mt-1 line-clamp-1 text-[12px] font-bold text-[var(--mt-ink-2)]">
+            {meals.map((meal) => meal.name || mealTypeLabels[meal.type]).join(", ")}
+          </p>
+        ) : (
+          <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-3)]">
+            Pas encore ajouté
+          </p>
+        )}
       </div>
 
-      <div className="mt-meal-kcal">
-        <div className="mt-meal-kcal-number">
-          {formatMacro(totals.calories, "")}
+      {hasMeals ? (
+        <div className="text-right">
+          <p className="text-[19px] font-black leading-none text-[var(--mt-ink)]">
+            {formatMacro(totals.calories, "")}
+          </p>
+          <p className="mt-1 text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
+            kcal
+          </p>
         </div>
-        <div className="mt-meal-kcal-unit">kcal</div>
-      </div>
-    </Link>
+      ) : (
+        <Link
+          href="/add"
+          className="rounded-full bg-white px-3 py-2 text-[11px] font-black text-[var(--mt-rouge)] ring-1 ring-[var(--mt-line)]"
+        >
+          Ajouter
+        </Link>
+      )}
+    </article>
   );
 }
 
 function SettingsIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.8 1.8 0 0 0 .36 2l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.8 1.8 0 0 0-2-.36 1.8 1.8 0 0 0-1 1.63V21a2 2 0 1 1-4 0v-.06a1.8 1.8 0 0 0-1-1.63 1.8 1.8 0 0 0-2 .36l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04a1.8 1.8 0 0 0 .36-2 1.8 1.8 0 0 0-1.63-1H3a2 2 0 1 1 0-4h.06a1.8 1.8 0 0 0 1.63-1 1.8 1.8 0 0 0-.36-2l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04a1.8 1.8 0 0 0 2 .36 1.8 1.8 0 0 0 1-1.63V3a2 2 0 1 1 4 0v.06a1.8 1.8 0 0 0 1 1.63 1.8 1.8 0 0 0 2-.36l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04a1.8 1.8 0 0 0-.36 2 1.8 1.8 0 0 0 1.63 1H21a2 2 0 1 1 0 4h-.06a1.8 1.8 0 0 0-1.54 1Z" />
     </svg>
@@ -369,7 +618,14 @@ function SettingsIcon() {
 
 function BellIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.7 21a2 2 0 0 1-3.4 0" />
     </svg>
@@ -378,7 +634,14 @@ function BellIcon() {
 
 function LightIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" />
       <path d="M9 21h6" />
     </svg>
