@@ -36,8 +36,8 @@ function formatWeekDay(date: Date) {
     .toUpperCase();
 }
 
-function getWeekDays(today: string) {
-  const base = new Date(`${today}T12:00:00`);
+function getWeekDays(selectedDate: string) {
+  const base = new Date(`${selectedDate}T12:00:00`);
   const day = base.getDay() === 0 ? 7 : base.getDay();
   const monday = new Date(base);
   monday.setDate(base.getDate() - day + 1);
@@ -46,11 +46,13 @@ function getWeekDays(today: string) {
     const current = new Date(monday);
     current.setDate(monday.getDate() + index);
 
+    const date = current.toISOString().slice(0, 10);
+
     return {
       label: formatWeekDay(current),
       number: String(current.getDate()).padStart(2, "0"),
-      date: current.toISOString().slice(0, 10),
-      active: current.toISOString().slice(0, 10) === today,
+      date,
+      active: date === selectedDate,
     };
   });
 }
@@ -68,7 +70,6 @@ function formatSelectedDate(date: string) {
     month: "long",
   }).format(new Date(`${date}T12:00:00`));
 }
-
 
 function getMealGradient(index: number) {
   const gradients = [
@@ -151,12 +152,14 @@ export default function Home() {
     foods,
     meals: allMeals,
     getMealsByDate,
+    copyDay,
     hasLoaded,
     onboardingCompleted,
   } = useNutritionStore();
 
   const today = todayLocalDate();
   const [selectedDate, setSelectedDate] = useState(today);
+  const [flashMessage, setFlashMessage] = useState("");
 
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
   const meals = getMealsByDate(selectedDate);
@@ -171,6 +174,34 @@ export default function Home() {
 
   function goToNextDay() {
     setSelectedDate((current) => shiftLocalDate(current, 1));
+  }
+
+  function notify(message: string) {
+    setFlashMessage(message);
+    window.setTimeout(() => setFlashMessage(""), 2600);
+  }
+
+  function handleCopyPreviousDay() {
+    const sourceDate = shiftLocalDate(selectedDate, -1);
+
+    if (meals.length > 0) {
+      const confirmed = window.confirm(
+        "Cette journée contient déjà des repas. Copier la veille va les ajouter en plus. Tu continues ?"
+      );
+
+      if (!confirmed) return;
+    }
+
+    const copiedCount = copyDay(sourceDate, selectedDate);
+
+    if (copiedCount === 0) {
+      notify("Aucun repas trouvé sur la veille.");
+      return;
+    }
+
+    notify(
+      `${copiedCount} repas copié${copiedCount > 1 ? "s" : ""} depuis la veille.`
+    );
   }
 
   const calories = toNumber(totals.calories);
@@ -246,6 +277,10 @@ export default function Home() {
   return (
     <AppShell>
       <div className="min-h-[100svh] bg-[var(--mt-bg)]">
+        {flashMessage ? (
+          <div className="mt-dashboard-toast">{flashMessage}</div>
+        ) : null}
+
         <section className="mt-immersive">
           <div className="mt-immersive-inner">
             <div className="flex items-center justify-between pt-1">
@@ -304,32 +339,32 @@ export default function Home() {
             </div>
 
             <div className="mt-dashboard-date-nav">
-  <button
-    type="button"
-    onClick={goToPreviousDay}
-    className="mt-date-chip mt-date-chip--ghost"
-  >
-    <span className="mt-date-chip-arrow">←</span>
-    <span>Veille</span>
-  </button>
+              <button
+                type="button"
+                onClick={goToPreviousDay}
+                className="mt-date-chip mt-date-chip--ghost"
+              >
+                <span className="mt-date-chip-arrow">←</span>
+                <span>Veille</span>
+              </button>
 
-  <button
-    type="button"
-    onClick={() => setSelectedDate(today)}
-    className="mt-date-chip mt-date-chip--primary"
-  >
-    Aujourd’hui
-  </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDate(today)}
+                className="mt-date-chip mt-date-chip--primary"
+              >
+                Aujourd’hui
+              </button>
 
-  <button
-    type="button"
-    onClick={goToNextDay}
-    className="mt-date-chip mt-date-chip--ghost"
-  >
-    <span>Demain</span>
-    <span className="mt-date-chip-arrow">→</span>
-  </button>
-</div>
+              <button
+                type="button"
+                onClick={goToNextDay}
+                className="mt-date-chip mt-date-chip--ghost"
+              >
+                <span>Demain</span>
+                <span className="mt-date-chip-arrow">→</span>
+              </button>
+            </div>
 
             <div className="mt-big-cal">
               <div className="mt-big-cal-number">
@@ -405,6 +440,47 @@ export default function Home() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--mt-rouge)]">
+                  Actions rapides
+                </p>
+                <h2 className="mt-display mt-1 text-[22px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
+                  Gagner du temps
+                </h2>
+              </div>
+
+              <Link
+                href="/add"
+                className="text-[12px] font-black text-[var(--mt-rouge)]"
+              >
+                Ajouter
+              </Link>
+            </div>
+
+            <div className="mt-4 grid gap-2">
+              <QuickActionButton
+                title="Ajouter un repas"
+                description="Créer un repas étape par étape."
+                href="/add"
+                tone="primary"
+              />
+
+              <QuickActionButton
+                title="Voir les bases pré-faites"
+                description="Choisir tranquillement un repas type."
+                href="/recipes"
+              />
+
+              <QuickActionButton
+                title="Copier la veille"
+                description="Reprendre les repas de la journée précédente."
+                onClick={handleCopyPreviousDay}
+              />
+            </div>
+          </section>
+
+          <section className="mt-card mt-4 rounded-[24px] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--mt-rouge)]">
                   Semaine
                 </p>
                 <h2 className="mt-display mt-1 text-[22px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
@@ -445,7 +521,9 @@ export default function Home() {
             <p className="mt-4 text-[12.5px] font-bold leading-6 text-[var(--mt-ink-2)]">
               Moyenne suivie :{" "}
               <span className="font-black text-[var(--mt-ink)]">
-                {trackedDays > 0 ? `${weeklyAverage} kcal` : "pas encore assez de données"}
+                {trackedDays > 0
+                  ? `${weeklyAverage} kcal`
+                  : "pas encore assez de données"}
               </span>
             </p>
           </section>
@@ -554,6 +632,49 @@ export default function Home() {
   );
 }
 
+function QuickActionButton({
+  title,
+  description,
+  href,
+  onClick,
+  tone = "neutral",
+}: {
+  title: string;
+  description: string;
+  href?: string;
+  onClick?: () => void;
+  tone?: "primary" | "neutral";
+}) {
+  const className =
+    tone === "primary"
+      ? "mt-quick-action mt-quick-action-primary"
+      : "mt-quick-action";
+
+  const content = (
+    <>
+      <span>
+        <b>{title}</b>
+        <small>{description}</small>
+      </span>
+      <em>→</em>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {content}
+    </button>
+  );
+}
+
 function MacroGlass({
   label,
   value,
@@ -629,7 +750,9 @@ function MealTypeCard({
 
         {hasMeals ? (
           <p className="mt-1 line-clamp-1 text-[12px] font-bold text-[var(--mt-ink-2)]">
-            {meals.map((meal) => meal.name || mealTypeLabels[meal.type]).join(", ")}
+            {meals
+              .map((meal) => meal.name || mealTypeLabels[meal.type])
+              .join(", ")}
           </p>
         ) : (
           <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-3)]">
