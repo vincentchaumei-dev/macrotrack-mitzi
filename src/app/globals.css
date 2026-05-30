@@ -2675,3 +2675,43 @@ a {
 }
 
 /* END MACROTRACK H1 MOBILE FIX V6 */
+
+
+/* =========================================================
+   MACROTRACK PERSONAL NOTE V7
+   personal dashboard text sizing
+   ========================================================= */
+
+.mt-personal-note {
+  margin-top: 14px !important;
+  max-width: 100% !important;
+  font-size: 12.8px !important;
+  line-height: 1.72 !important;
+  letter-spacing: -0.01em !important;
+  font-weight: 650 !important;
+  color: var(--mt-ink-2) !important;
+  text-wrap: pretty;
+}
+
+.mt-personal-note + .mt-personal-note {
+  display: none !important;
+}
+
+.mt-phone-shell h1:has(+ .mt-personal-note),
+.mt-phone-shell h2:has(+ .mt-personal-note),
+.mt-phone-shell h3:has(+ .mt-personal-note) {
+  font-size: clamp(25px, 7.2vw, 32px) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.045em !important;
+}
+
+@media (max-width: 390px) {
+  .mt-personal-note {
+    font-size: 12.2px !important;
+    line-height: 1.68 !important;
+  }
+}
+
+/* END MACROTRACK PERSONAL NOTE V7
+   ========================================================= */
+

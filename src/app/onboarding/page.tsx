@@ -285,7 +285,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       <StepKicker>Bienvenue</StepKicker>
 
       <h2 className="OnboardingTitle">
-        Une app nutrition douce, pas culpabilisante.
+        Bienvenue sur l'app beauty, wlh t parfaite, j'ai essayé de rendre le truc le plus didactique possible si t'as question reach me : 0622336964, tu me call jour et nuit ou au pire tu me dis je prends un vol pour Bilbao, hésite pas à me dire, je suis tout à ta disposition, pas de culpabilisation, juste un tracking rien ne sert d'être parfait sur une journée et culpabiliser une autre, c'est un tout, et tu fais déjà le plus important : me parler, t parfait et somptueuse, keep up la cadence chérie t'es o top
       </h2>
 
       <p className="OnboardingText">
