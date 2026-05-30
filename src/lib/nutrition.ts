@@ -172,19 +172,19 @@ export function isFoodComplete(food: Food) {
 /* ----------------------------- */
 
 export const activityLevelLabels: Record<ActivityLevel, string> = {
-  sedentary: "Sédentaire",
-  light: "Légèrement active",
-  moderate: "Modérément active",
-  active: "Active",
-  very_active: "Très active",
+  sedentary: "Sédentaire · 0 entraînement/semaine",
+  light: "Légère · 1 à 2 entraînements/semaine",
+  moderate: "Modérée · 3 à 4 entraînements/semaine",
+  active: "Active · 5 entraînements/semaine",
+  very_active: "Très active · 6+ entraînements/semaine",
 };
 
 export const activityMultipliers: Record<ActivityLevel, number> = {
   sedentary: 1.2,
-  light: 1.375,
-  moderate: 1.55,
-  active: 1.725,
-  very_active: 1.9,
+  light: 1.35,
+  moderate: 1.5,
+  active: 1.65,
+  very_active: 1.8,
 };
 
 export const goalTypeLabels: Record<GoalType, string> = {
@@ -199,6 +199,10 @@ export const goalSpeedLabels: Record<GoalSpeed, string> = {
   moderate: "Modérée",
   assertive: "Plus ambitieuse",
 };
+
+function roundToNearestTen(value: number) {
+  return Math.round(value / 10) * 10;
+}
 
 export function calculateBmr({
   sex,
@@ -247,28 +251,75 @@ export function getCalorieAdjustment(goalType: GoalType, goalSpeed: GoalSpeed) {
   return 0;
 }
 
+export function getMinimumCalorieTarget(profile: UserProfile) {
+  const sexFloor = profile.sex === "male" ? 1600 : 1300;
+  const bmrFloor = Math.round(calculateBmr(profile) * 0.85);
+
+  return Math.max(sexFloor, bmrFloor);
+}
+
+export function calculateCalorieTarget(profile: UserProfile) {
+  const bmr = calculateBmr(profile);
+  const tdee = calculateTdee(profile);
+  const adjustment = getCalorieAdjustment(profile.goalType, profile.goalSpeed);
+  const rawCalories = tdee + adjustment;
+
+  const minimumCalories = getMinimumCalorieTarget(profile);
+
+  const deficitFloor =
+    profile.goalType === "fat_loss" || profile.goalType === "recomposition"
+      ? Math.round(tdee * 0.75)
+      : 0;
+
+  const guardedCalories =
+    profile.goalType === "fat_loss" || profile.goalType === "recomposition"
+      ? Math.max(rawCalories, minimumCalories, deficitFloor)
+      : Math.max(rawCalories, minimumCalories);
+
+  const calories = roundToNearestTen(guardedCalories);
+
+  return {
+    bmr,
+    tdee,
+    adjustment,
+    rawCalories: Math.round(rawCalories),
+    minimumCalories,
+    deficitFloor,
+    calories,
+    wasLimited: calories > Math.round(rawCalories),
+  };
+}
+
+function getProteinTargetPerKg(goalType: GoalType) {
+  if (goalType === "fat_loss") return 1.8;
+  if (goalType === "recomposition") return 1.8;
+  if (goalType === "muscle_gain") return 1.7;
+
+  return 1.6;
+}
+
+function getFatTargetPerKg(goalType: GoalType) {
+  if (goalType === "muscle_gain") return 0.85;
+
+  return 0.8;
+}
+
 export function calculateRecommendedGoals(
   profile: UserProfile
 ): NutritionGoals {
-  const tdee = calculateTdee(profile);
-  const calorieAdjustment = getCalorieAdjustment(
-    profile.goalType,
-    profile.goalSpeed
+  const { calories } = calculateCalorieTarget(profile);
+
+  const proteinG = Math.round(
+    profile.currentWeightKg * getProteinTargetPerKg(profile.goalType)
   );
 
-  const calories = Math.max(tdee + calorieAdjustment, 1200);
-
-  let proteinPerKg = 1.6;
-
-  if (profile.goalType === "fat_loss") proteinPerKg = 1.8;
-  if (profile.goalType === "recomposition") proteinPerKg = 1.8;
-  if (profile.goalType === "muscle_gain") proteinPerKg = 1.7;
-
-  const proteinG = Math.round(profile.currentWeightKg * proteinPerKg);
-  const fatG = Math.round(profile.currentWeightKg * 0.8);
+  const fatG = Math.round(
+    profile.currentWeightKg * getFatTargetPerKg(profile.goalType)
+  );
 
   const caloriesFromProtein = proteinG * 4;
   const caloriesFromFat = fatG * 9;
+
   const remainingCalories = Math.max(
     calories - caloriesFromProtein - caloriesFromFat,
     0
@@ -284,28 +335,42 @@ export function calculateRecommendedGoals(
   };
 }
 
+export const calculateSuggestedGoals = calculateRecommendedGoals;
+
 export function explainGoal(profile: UserProfile) {
-  const tdee = calculateTdee(profile);
-  const adjustment = getCalorieAdjustment(profile.goalType, profile.goalSpeed);
-  const target = tdee + adjustment;
+  const {
+    tdee,
+    calories,
+    rawCalories,
+    minimumCalories,
+    deficitFloor,
+    wasLimited,
+  } = calculateCalorieTarget(profile);
+
+  const limitText = wasLimited
+    ? ` La cible brute aurait été autour de ${rawCalories} kcal, mais l’app l’a remontée à ${calories} kcal pour éviter un objectif trop bas.`
+    : "";
+
+  const adjustmentText =
+    " Cette estimation reste une base de départ : le vrai réglage se fait après 2 à 3 semaines, avec l’évolution du poids moyen et la régularité du suivi.";
 
   if (profile.goalType === "fat_loss") {
     return `Ta dépense journalière est estimée à environ ${tdee} kcal. Pour une perte de poids ${goalSpeedLabels[
       profile.goalSpeed
-    ].toLowerCase()}, l’app propose une cible autour de ${target} kcal.`;
+    ].toLowerCase()}, l’app propose une cible autour de ${calories} kcal.${limitText}${adjustmentText}`;
   }
 
   if (profile.goalType === "muscle_gain") {
     return `Ta dépense journalière est estimée à environ ${tdee} kcal. Pour une prise de masse ${goalSpeedLabels[
       profile.goalSpeed
-    ].toLowerCase()}, l’app propose un léger surplus autour de ${target} kcal.`;
+    ].toLowerCase()}, l’app propose un léger surplus autour de ${calories} kcal.${adjustmentText}`;
   }
 
   if (profile.goalType === "recomposition") {
-    return `Ta dépense journalière est estimée à environ ${tdee} kcal. Pour une recomposition, l’app propose une cible proche du maintien, avec une priorité sur les protéines.`;
+    return `Ta dépense journalière est estimée à environ ${tdee} kcal. Pour une recomposition, l’app propose une cible proche du maintien, avec une priorité sur les protéines.${limitText}${adjustmentText}`;
   }
 
-  return `Ta dépense journalière est estimée à environ ${tdee} kcal. L’objectif maintien garde une cible proche de cette dépense.`;
+  return `Ta dépense journalière est estimée à environ ${tdee} kcal. L’objectif maintien garde une cible autour de ${calories} kcal.${adjustmentText}`;
 }
 
 export function getGoalLabel(profile: UserProfile) {

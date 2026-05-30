@@ -4,14 +4,14 @@ import { FormEvent, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import { NutritionGoals, UserProfile } from "@/types/nutrition";
-import { calculateTdee, goalTypeLabels } from "@/lib/nutrition";
+import { calculateRecommendedGoals, calculateTdee, goalTypeLabels } from "@/lib/nutrition";
 
 const activityLabels: Record<string, string> = {
-  sedentary: "Sédentaire",
+  sedentary: "Sédentaire · 0 entraînement/semaine",
   light: "Légère",
   moderate: "Modérée",
-  active: "Active",
-  very_active: "Très active",
+  active: "Active · 5 entraînements/semaine",
+  very_active: "Très active · 6+ entraînements/semaine",
 };
 
 const goalSpeedLabels: Record<string, string> = {
@@ -384,11 +384,11 @@ export default function GoalsPage() {
                 }
                 className="GoalInput"
               >
-                <option value="sedentary">Sédentaire</option>
-                <option value="light">Activité légère</option>
-                <option value="moderate">Activité modérée</option>
-                <option value="active">Active</option>
-                <option value="very_active">Très active</option>
+                <option value="sedentary">Sédentaire · 0 entraînement/semaine</option>
+                <option value="light">Légère · 1 à 2 entraînements/semaine</option>
+                <option value="moderate">Modérée · 3 à 4 entraînements/semaine</option>
+                <option value="active">Active · 5 entraînements/semaine</option>
+                <option value="very_active">Très active · 6+ entraînements/semaine</option>
               </select>
             </Field>
           </div>

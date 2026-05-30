@@ -22,16 +22,16 @@ type ProfileFormKey = keyof ProfileFormState;
 type UpdateProfileField = (key: ProfileFormKey, value: string) => void;
 
 const activityLabels: Record<string, string> = {
-  sedentary: "Sédentaire",
-  light: "Activité légère",
-  moderate: "Activité modérée",
-  active: "Active",
-  very_active: "Très active",
+  sedentary: "Sédentaire · 0 entraînement/semaine",
+  light: "Légère · 1 à 2 entraînements/semaine",
+  moderate: "Modérée · 3 à 4 entraînements/semaine",
+  active: "Active · 5 entraînements/semaine",
+  very_active: "Très active · 6+ entraînements/semaine",
 };
 
 const goalSpeedLabels: Record<string, string> = {
   gentle: "Progressif",
-  moderate: "Modéré",
+  moderate: "Modérée · 3 à 4 entraînements/semaine",
   assertive: "Rapide",
 };
 
@@ -39,27 +39,27 @@ const activities = [
   {
     value: "sedentary",
     label: "Sédentaire",
-    text: "Peu de marche ou activité physique.",
+    text: "0 entraînement/semaine · journées plutôt calmes.",
   },
   {
     value: "light",
     label: "Légère",
-    text: "Un peu de marche, quelques entraînements.",
+    text: "1 à 2 entraînements/semaine · un peu de marche.",
   },
   {
     value: "moderate",
     label: "Modérée",
-    text: "Activité régulière dans la semaine.",
+    text: "3 à 4 entraînements/semaine · activité régulière.",
   },
   {
     value: "active",
     label: "Active",
-    text: "Sport fréquent ou journées actives.",
+    text: "5 entraînements/semaine · sport fréquent.",
   },
   {
     value: "very_active",
     label: "Très active",
-    text: "Sport intense ou activité physique élevée.",
+    text: "6+ entraînements/semaine · sport très régulier ou métier physique.",
   },
 ];
 
@@ -582,7 +582,7 @@ function FinalStep({
         />
         <SummaryRow
           title="Activité"
-          value={activityLabels[profile.activityLevel] ?? "Activité modérée"}
+          value={activityLabels[profile.activityLevel] ?? "Modérée · 3 à 4 entraînements/semaine"}
         />
         <SummaryRow
           title="Calories"
