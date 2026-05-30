@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
@@ -15,9 +15,18 @@ import {
   shouldShowFoodInSimpleMode,
   todayLocalDate,
 } from "@/lib/nutrition";
-import { Food, MealItem, MealType } from "@/types/nutrition";
+import { Food, Meal, MealItem, MealType } from "@/types/nutrition";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+
+type QuickMode = "favorites" | "recent" | "frequent" | "essentials";
+
+const quickModes: { label: string; value: QuickMode }[] = [
+  { label: "Favoris", value: "favorites" },
+  { label: "Récents", value: "recent" },
+  { label: "Fréquents", value: "frequent" },
+  { label: "Essentiels", value: "essentials" },
+];
 
 function parseQuantity(value: string) {
   const parsed = Number(value.replace(",", "."));
@@ -38,9 +47,63 @@ function getMealStepLabel(itemsCount: number) {
   return `${itemsCount} aliments ajoutés`;
 }
 
+function getFoodsById(foods: Food[]) {
+  return new Map(foods.map((food) => [food.id, food]));
+}
+
+function getRecentFoods(meals: Meal[], foods: Food[], limit = 12) {
+  const foodsById = getFoodsById(foods);
+  const seen = new Set<string>();
+  const recentFoods: Food[] = [];
+
+  const sortedMeals = [...meals].sort((a, b) => {
+    const aTime = a.updatedAt || a.createdAt;
+    const bTime = b.updatedAt || b.createdAt;
+    return bTime.localeCompare(aTime);
+  });
+
+  for (const meal of sortedMeals) {
+    const reversedItems = [...meal.items].reverse();
+
+    for (const item of reversedItems) {
+      if (seen.has(item.foodId)) continue;
+
+      const food = foodsById.get(item.foodId);
+
+      if (!food) continue;
+
+      seen.add(item.foodId);
+      recentFoods.push(food);
+
+      if (recentFoods.length >= limit) {
+        return recentFoods;
+      }
+    }
+  }
+
+  return recentFoods;
+}
+
+function getFrequentFoods(meals: Meal[], foods: Food[], limit = 12) {
+  const foodsById = getFoodsById(foods);
+  const counts = new Map<string, number>();
+
+  meals.forEach((meal) => {
+    meal.items.forEach((item) => {
+      counts.set(item.foodId, (counts.get(item.foodId) ?? 0) + 1);
+    });
+  });
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([foodId]) => foodsById.get(foodId))
+    .filter((food): food is Food => Boolean(food))
+    .slice(0, limit);
+}
+
 export default function AddMealPage() {
   const router = useRouter();
-  const { foods, addMeal } = useNutritionStore();
+  const { foods, meals, addMeal } = useNutritionStore();
 
   const [date, setDate] = useState(todayLocalDate());
   const [type, setType] = useState<MealType>("breakfast");
@@ -50,8 +113,44 @@ export default function AddMealPage() {
   const [quantityG, setQuantityG] = useState("");
   const [items, setItems] = useState<MealItem[]>([]);
   const [includeFullDatabase, setIncludeFullDatabase] = useState(false);
+  const [quickMode, setQuickMode] = useState<QuickMode>("favorites");
 
   const selectedFood = foods.find((food) => food.id === selectedFoodId) ?? null;
+
+  const favoriteFoods = useMemo(
+    () =>
+      foods
+        .filter((food) => food.isFavorite)
+        .sort((a, b) => compareFoodsForSearch(a, b, ""))
+        .slice(0, 12),
+    [foods]
+  );
+
+  const recentFoods = useMemo(
+    () => getRecentFoods(meals, foods, 12),
+    [meals, foods]
+  );
+
+  const frequentFoods = useMemo(
+    () => getFrequentFoods(meals, foods, 12),
+    [meals, foods]
+  );
+
+  const essentialFoods = useMemo(
+    () =>
+      foods
+        .filter((food) => food.isEssential)
+        .sort((a, b) => compareFoodsForSearch(a, b, ""))
+        .slice(0, 16),
+    [foods]
+  );
+
+  const quickFoods = {
+    favorites: favoriteFoods,
+    recent: recentFoods,
+    frequent: frequentFoods,
+    essentials: essentialFoods,
+  }[quickMode];
 
   const filteredFoods = useMemo(() => {
     const hasQuery = query.trim().length > 0;
@@ -75,11 +174,6 @@ export default function AddMealPage() {
       .sort((a, b) => compareFoodsForSearch(a, b, query))
       .slice(0, hasQuery || includeFullDatabase ? 24 : 10);
   }, [foods, query, includeFullDatabase]);
-
-  const quickFoods = foods
-    .filter((food) => food.isFavorite || food.isEssential)
-    .sort((a, b) => compareFoodsForSearch(a, b, ""))
-    .slice(0, 12);
 
   const draftMeal = {
     id: "draft",
@@ -264,23 +358,26 @@ export default function AddMealPage() {
             </button>
           </div>
 
-          {quickFoods.length > 0 && !selectedFood && query.trim().length === 0 && (
+          {!selectedFood && query.trim().length === 0 && (
             <div className="mt-4">
-              <p className="mb-2 text-[12px] font-black text-[var(--mt-ink)]">
-                Rapides
-              </p>
-
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {quickFoods.map((food) => (
-                  <button
-                    key={food.id}
-                    type="button"
-                    onClick={() => selectFood(food)}
-                    className="shrink-0 rounded-full bg-white px-4 py-2.5 text-[12px] font-black text-[var(--mt-ink)] shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
+                {quickModes.map((mode) => (
+                  <QuickTab
+                    key={mode.value}
+                    active={quickMode === mode.value}
+                    onClick={() => setQuickMode(mode.value)}
                   >
-                    {food.name}
-                  </button>
+                    {mode.label}
+                  </QuickTab>
                 ))}
+              </div>
+
+              <div className="mt-4">
+                <QuickFoodsGrid
+                  foods={quickFoods}
+                  mode={quickMode}
+                  onSelect={selectFood}
+                />
               </div>
             </div>
           )}
@@ -422,6 +519,89 @@ function SummaryGlass({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-[var(--mt-display)] text-[21px] font-semibold leading-none">
         {value}
       </p>
+    </div>
+  );
+}
+
+function QuickTab({
+  children,
+  active,
+  onClick,
+}: {
+  children: ReactNode;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full px-4 py-2.5 text-[12px] font-black ${
+        active
+          ? "bg-[var(--mt-ink)] text-white"
+          : "bg-white text-[var(--mt-ink-2)] ring-1 ring-[var(--mt-line)]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function QuickFoodsGrid({
+  foods,
+  mode,
+  onSelect,
+}: {
+  foods: Food[];
+  mode: QuickMode;
+  onSelect: (food: Food) => void;
+}) {
+  const emptyText = {
+    favorites: "Aucun favori pour le moment.",
+    recent: "Les aliments récents apparaîtront après tes premiers repas.",
+    frequent: "Les aliments fréquents apparaîtront avec l’usage.",
+    essentials: "Aucun aliment essentiel disponible.",
+  }[mode];
+
+  if (foods.length === 0) {
+    return (
+      <div className="rounded-[22px] border border-dashed border-[var(--mt-line-2)] bg-[var(--mt-card-soft)] p-4 text-center">
+        <p className="text-[13px] font-bold leading-6 text-[var(--mt-ink-2)]">
+          {emptyText}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {foods.map((food) => (
+        <button
+          key={food.id}
+          type="button"
+          onClick={() => onSelect(food)}
+          className="rounded-[20px] bg-white p-3 text-left shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
+        >
+          <div className="flex items-start gap-2">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[13px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
+              <span className="mt-display text-[16px] font-semibold">
+                {food.name.slice(0, 1).toUpperCase()}
+              </span>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-[12px] font-black leading-tight text-[var(--mt-ink)]">
+                {food.name}
+              </p>
+              <p className="mt-1 text-[10px] font-bold text-[var(--mt-ink-3)]">
+                {food.servingSizeG
+                  ? `${food.servingName || "Portion"} · ${food.servingSizeG}g`
+                  : `${food.caloriesPer100g ?? "—"} kcal`}
+              </p>
+            </div>
+          </div>
+        </button>
+      ))}
     </div>
   );
 }
