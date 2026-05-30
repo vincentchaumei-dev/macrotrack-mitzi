@@ -11,6 +11,16 @@ type EssentialDefinition = {
   servingName?: string;
   servingSizeG?: number;
   isFavorite?: boolean;
+  fallback?: {
+    caloriesPer100g: number;
+    proteinPer100g: number;
+    carbsPer100g: number;
+    fatPer100g: number;
+    saturatedFatPer100g?: number | null;
+    sugarPer100g?: number | null;
+    fiberPer100g?: number | null;
+    saltPer100g?: number | null;
+  };
 };
 
 function normalizeSearchText(value: string) {
@@ -245,49 +255,86 @@ function getExpectedCaloriesRange(definition: EssentialDefinition): [number, num
   }
 
   function createEssentialFood(definition: EssentialDefinition): Food | null {
-    const bestMatch = ciqualFoods
-      .map((food) => ({
-        food,
-        score: scoreFood(food, definition),
-      }))
-      .filter((item) => item.score > -999999)
-      .sort((a, b) => b.score - a.score)[0]?.food;
-  
-    if (!bestMatch) {
-      return null;
-    }
-  
-    const createdAt = "2026-01-01T00:00:00.000Z";
-  
-    const autoReviewed =
-      bestMatch.dataQualityStatus === "complete" &&
-      isInExpectedCaloriesRange(bestMatch, definition);
-  
+  const bestMatch = ciqualFoods
+    .map((food) => ({
+      food,
+      score: scoreFood(food, definition),
+    }))
+    .filter((item) => item.score > -999999)
+    .sort((a, b) => b.score - a.score)[0]?.food;
+
+  const createdAt = "2026-01-01T00:00:00.000Z";
+
+  if (!bestMatch && !definition.fallback) {
+    return null;
+  }
+
+  if (!bestMatch && definition.fallback) {
     return {
-      ...bestMatch,
       id: `essential-${definition.id}`,
       name: definition.name,
-      officialName: bestMatch.name,
+      officialName: `${definition.name} - valeurs moyennes`,
+      brand: undefined,
+      barcode: undefined,
       category: definition.category,
       servingName: definition.servingName ?? "100 g",
       servingSizeG: definition.servingSizeG ?? 100,
+      caloriesPer100g: definition.fallback.caloriesPer100g,
+      proteinPer100g: definition.fallback.proteinPer100g,
+      carbsPer100g: definition.fallback.carbsPer100g,
+      fatPer100g: definition.fallback.fatPer100g,
+      saturatedFatPer100g: definition.fallback.saturatedFatPer100g ?? null,
+      sugarPer100g: definition.fallback.sugarPer100g ?? null,
+      fiberPer100g: definition.fallback.fiberPer100g ?? null,
+      saltPer100g: definition.fallback.saltPer100g ?? null,
+      imageUrl: undefined,
+      externalUrl: undefined,
       isFavorite: definition.isFavorite ?? false,
       isEssential: true,
-      source: "ciqual",
-      verified: true,
-      reviewed: autoReviewed,
-      reviewNotes: autoReviewed
-        ? "Auto-audit : correspondance Ciqual cohérente avec les bornes attendues."
-        : "Auto-audit : valeur à vérifier, correspondance Ciqual potentiellement incertaine.",
-      dataQualityStatus: autoReviewed
-        ? "complete"
-        : bestMatch.dataQualityStatus ?? "needs_review",
+      source: "manual",
+      verified: false,
+      reviewed: false,
+      reviewNotes:
+        "Valeurs moyennes ajoutées manuellement : à vérifier avec l’étiquette du produit utilisé.",
+      dataQualityStatus: "complete",
       createdAt,
       updatedAt: createdAt,
     };
   }
 
-  const essentialDefinitions: EssentialDefinition[] = [
+  if (!bestMatch) {
+    return null;
+  }
+
+  const autoReviewed =
+    bestMatch.dataQualityStatus === "complete" &&
+    isInExpectedCaloriesRange(bestMatch, definition);
+
+  return {
+    ...bestMatch,
+    id: `essential-${definition.id}`,
+    name: definition.name,
+    officialName: bestMatch.name,
+    category: definition.category,
+    servingName: definition.servingName ?? "100 g",
+    servingSizeG: definition.servingSizeG ?? 100,
+    isFavorite: definition.isFavorite ?? false,
+    isEssential: true,
+    source: "ciqual",
+    verified: true,
+    reviewed: autoReviewed,
+    reviewNotes: autoReviewed
+      ? "Auto-audit : correspondance Ciqual cohérente avec les bornes attendues."
+      : "Auto-audit : valeur à vérifier, correspondance Ciqual potentiellement incertaine.",
+    dataQualityStatus: autoReviewed
+      ? "complete"
+      : bestMatch.dataQualityStatus ?? "needs_review",
+    createdAt,
+    updatedAt: createdAt,
+  };
+}
+
+const essentialDefinitions: EssentialDefinition[] = [
     // Fruits
     {
       id: "banane",
@@ -820,6 +867,16 @@ function getExpectedCaloriesRange(definition: EssentialDefinition): [number, num
       servingName: "1 pot",
       servingSizeG: 150,
       isFavorite: true,
+  fallback: {
+    caloriesPer100g: 60,
+    proteinPer100g: 10,
+    carbsPer100g: 4,
+    fatPer100g: 0.2,
+    saturatedFatPer100g: 0.1,
+    sugarPer100g: 4,
+    fiberPer100g: 0,
+    saltPer100g: 0.1,
+  },
     },
     {
       id: "yaourt-nature",
