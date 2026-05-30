@@ -582,10 +582,10 @@ export default function Home() {
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                 {quickFoods.map((food) => (
                   <Link
-                    key={food.id}
-                    href="/add"
-                    className="min-w-[132px] rounded-[20px] bg-[var(--mt-card-soft)] p-3 ring-1 ring-[var(--mt-line)]"
-                  >
+                  key={food.id}
+                  href="/add"
+                  className="mt-quick-food-card"
+                >
                     <div className="grid h-9 w-9 place-items-center rounded-[13px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
                       <span className="text-[15px] font-black">
                         {food.name.slice(0, 1).toUpperCase()}
