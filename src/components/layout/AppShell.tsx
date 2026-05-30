@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link href="/" className="flex items-center gap-3">
                 <div className="grid h-11 w-11 overflow-hidden rounded-[16px] bg-[var(--mt-rouge)] shadow-[var(--mt-shadow-red)]">
                   <img
-                    src="/brand/macrotrack-logo.svg"
+                    src="/brand/macrotrack-logo.png"
                     alt=""
                     aria-hidden="true"
                     className="h-full w-full object-cover"
