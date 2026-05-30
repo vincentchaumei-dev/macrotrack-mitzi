@@ -1971,3 +1971,63 @@ a[aria-disabled="true"] {
   border: 1px solid var(--mt-line);
   box-shadow: var(--mt-shadow-sm);
 }
+
+.AuditInput {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 18px;
+  border: 1px solid var(--mt-line);
+  background: var(--mt-card-soft);
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--mt-ink);
+  outline: none;
+}
+
+.AuditInput:focus {
+  border-color: rgba(192, 30, 60, 0.42);
+  background: white;
+  box-shadow:
+    0 0 0 4px rgba(192, 30, 60, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.AuditInput::placeholder {
+  color: var(--mt-ink-3);
+  font-weight: 700;
+}
+
+.AuditPrimaryButton,
+.AuditSoftButton,
+.AuditNeutralButton {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 18px;
+  padding: 12px 15px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.AuditPrimaryButton {
+  background: linear-gradient(
+    160deg,
+    var(--mt-rouge-lit),
+    var(--mt-rouge-deep)
+  );
+  color: white;
+  box-shadow: var(--mt-shadow-red);
+}
+
+.AuditSoftButton {
+  background: var(--mt-rouge-wash);
+  color: var(--mt-rouge-deep);
+  border: 1px solid var(--mt-rouge-soft);
+}
+
+.AuditNeutralButton {
+  background: white;
+  color: var(--mt-ink);
+  border: 1px solid var(--mt-line);
+  box-shadow: var(--mt-shadow-sm);
+}

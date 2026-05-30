@@ -32,6 +32,7 @@ export default function SettingsPage() {
     importData,
     resetData,
     setOnboardingCompleted,
+    syncEssentialFoods,
   } = useNutritionStore();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -70,6 +71,17 @@ export default function SettingsPage() {
     } finally {
       event.target.value = "";
     }
+  }
+
+  function handleSyncEssentialFoods() {
+    const confirmed = window.confirm(
+      "Mettre à jour les aliments essentiels ? Les repas existants seront recalculés, mais tes données ne seront pas supprimées."
+    );
+
+    if (!confirmed) return;
+
+    syncEssentialFoods();
+    notify("Aliments essentiels mis à jour.");
   }
 
   function handleReset() {
@@ -200,6 +212,22 @@ export default function SettingsPage() {
               className="hidden"
             />
           </div>
+        </section>
+
+        <section className="mt-card rounded-[28px] p-5">
+          <SectionHead
+            kicker="Base alimentaire"
+            title="Mettre à jour les essentiels"
+            text="Ajoute les nouveaux aliments de base, met à jour les noms et les portions, puis recalcule les repas existants sans supprimer tes données."
+          />
+
+          <button
+            type="button"
+            onClick={handleSyncEssentialFoods}
+            className="SettingsSoftButton mt-5"
+          >
+            Mettre à jour les aliments essentiels
+          </button>
         </section>
 
         <section className="mt-card rounded-[28px] p-5">

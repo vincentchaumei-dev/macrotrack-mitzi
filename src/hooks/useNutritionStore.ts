@@ -45,6 +45,56 @@ const defaultData: AppData = {
   weightLogs: [],
 };
 
+function shouldPreserveUserNutrition(food: Food) {
+  return food.reviewed === true;
+}
+
+function mergeEssentialFood(seedFood: Food, existingFood: Food) {
+  const preserveNutrition = shouldPreserveUserNutrition(existingFood);
+
+  return {
+    ...seedFood,
+
+    id: existingFood.id,
+    createdAt: existingFood.createdAt ?? seedFood.createdAt,
+    updatedAt: new Date().toISOString(),
+
+    isFavorite: existingFood.isFavorite ?? seedFood.isFavorite,
+
+    reviewed: existingFood.reviewed ?? seedFood.reviewed,
+    reviewNotes: existingFood.reviewNotes ?? seedFood.reviewNotes,
+
+    caloriesPer100g: preserveNutrition
+      ? existingFood.caloriesPer100g
+      : seedFood.caloriesPer100g,
+    proteinPer100g: preserveNutrition
+      ? existingFood.proteinPer100g
+      : seedFood.proteinPer100g,
+    carbsPer100g: preserveNutrition
+      ? existingFood.carbsPer100g
+      : seedFood.carbsPer100g,
+    fatPer100g: preserveNutrition
+      ? existingFood.fatPer100g
+      : seedFood.fatPer100g,
+    saturatedFatPer100g: preserveNutrition
+      ? existingFood.saturatedFatPer100g
+      : seedFood.saturatedFatPer100g,
+    fiberPer100g: preserveNutrition
+      ? existingFood.fiberPer100g
+      : seedFood.fiberPer100g,
+    sugarPer100g: preserveNutrition
+      ? existingFood.sugarPer100g
+      : seedFood.sugarPer100g,
+    saltPer100g: preserveNutrition
+      ? existingFood.saltPer100g
+      : seedFood.saltPer100g,
+
+    dataQualityStatus: preserveNutrition
+      ? existingFood.dataQualityStatus
+      : seedFood.dataQualityStatus,
+  };
+}
+
 function mergeSeedFoods(existingFoods: Food[]) {
   const merged = new Map<string, Food>();
 
@@ -54,17 +104,12 @@ function mergeSeedFoods(existingFoods: Food[]) {
 
   existingFoods.forEach((food) => {
     const seedFood = merged.get(food.id);
-  
+
     if (seedFood?.isEssential) {
-      merged.set(food.id, {
-        ...food,
-        ...seedFood,
-        isFavorite: food.isFavorite ?? seedFood.isFavorite,
-      });
-  
+      merged.set(food.id, mergeEssentialFood(seedFood, food));
       return;
     }
-  
+
     merged.set(food.id, {
       ...seedFood,
       ...food,
@@ -91,13 +136,63 @@ function mergeSeedMealTemplates(existingTemplates: MealTemplate[]) {
   return Array.from(merged.values());
 }
 
+function refreshMealItemsFromFoods(items: MealItem[], foods: Food[]) {
+  const foodsById = new Map(foods.map((food) => [food.id, food]));
+
+  return items.map((item) => {
+    const food = foodsById.get(item.foodId);
+
+    if (!food) return item;
+
+    const refreshedItem = buildMealItem(food, item.quantityG);
+
+    return {
+      ...refreshedItem,
+      id: item.id,
+    };
+  });
+}
+
+function refreshMealsFromFoods(meals: Meal[], foods: Food[]) {
+  const updatedAt = new Date().toISOString();
+
+  return meals.map((meal) => ({
+    ...meal,
+    items: refreshMealItemsFromFoods(meal.items, foods),
+    updatedAt,
+  }));
+}
+
+function refreshMealTemplatesFromFoods(
+  mealTemplates: MealTemplate[],
+  foods: Food[]
+) {
+  const updatedAt = new Date().toISOString();
+
+  return mealTemplates.map((template) => ({
+    ...template,
+    items: refreshMealItemsFromFoods(template.items, foods),
+    updatedAt,
+  }));
+}
+
 function normalizeImportedData(input: Partial<AppData>): AppData {
   const defaultMealTemplatesAlreadyAdded =
     input.defaultMealTemplatesAdded === true;
 
+  const existingFoods = Array.isArray(input.foods) ? input.foods : [];
+  const mergedFoods =
+    existingFoods.length > 0 ? mergeSeedFoods(existingFoods) : seedFoods;
+
   const existingTemplates = Array.isArray(input.mealTemplates)
     ? input.mealTemplates
     : [];
+
+  const mergedTemplates = defaultMealTemplatesAlreadyAdded
+    ? existingTemplates
+    : mergeSeedMealTemplates(existingTemplates);
+
+  const meals = Array.isArray(input.meals) ? input.meals : [];
 
   return {
     onboardingCompleted:
@@ -106,13 +201,9 @@ function normalizeImportedData(input: Partial<AppData>): AppData {
         : false,
     defaultMealTemplatesAdded: true,
     profile: input.profile ?? defaultProfile,
-    foods: Array.isArray(input.foods)
-      ? mergeSeedFoods(input.foods)
-      : seedFoods,
-    meals: Array.isArray(input.meals) ? input.meals : [],
-    mealTemplates: defaultMealTemplatesAlreadyAdded
-      ? existingTemplates
-      : mergeSeedMealTemplates(existingTemplates),
+    foods: mergedFoods,
+    meals: refreshMealsFromFoods(meals, mergedFoods),
+    mealTemplates: refreshMealTemplatesFromFoods(mergedTemplates, mergedFoods),
     goals: input.goals ?? defaultGoals,
     weightLogs: Array.isArray(input.weightLogs) ? input.weightLogs : [],
   };
@@ -198,6 +289,22 @@ export function useNutritionStore() {
       ...current,
       onboardingCompleted: value,
     }));
+  }
+
+  function syncEssentialFoods() {
+    setData((current) => {
+      const mergedFoods = mergeSeedFoods(current.foods);
+
+      return {
+        ...current,
+        foods: mergedFoods,
+        meals: refreshMealsFromFoods(current.meals, mergedFoods),
+        mealTemplates: refreshMealTemplatesFromFoods(
+          current.mealTemplates,
+          mergedFoods
+        ),
+      };
+    });
   }
 
   function addFood(input: Omit<Food, "id" | "createdAt" | "updatedAt">) {
@@ -502,6 +609,7 @@ export function useNutritionStore() {
     weightLogs,
     completeOnboarding,
     setOnboardingCompleted,
+    syncEssentialFoods,
     addFood,
     deleteFood,
     updateFood,
