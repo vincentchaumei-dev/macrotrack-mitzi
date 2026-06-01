@@ -23,8 +23,8 @@ const defaultProfile: UserProfile = {
   heightCm: 165,
   currentWeightKg: 60,
   activityLevel: "light",
-  goalType: "fat_loss",
-  goalSpeed: "moderate",
+  goalType: "maintenance",
+  goalSpeed: "gentle",
 };
 
 const defaultGoals: NutritionGoals = {
@@ -44,6 +44,18 @@ const defaultData: AppData = {
   goals: defaultGoals,
   weightLogs: [],
 };
+
+function cloneAppData<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function writeLocalStorage(data: AppData) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn("Impossible d’enregistrer les données MacroTrack.", error);
+  }
+}
 
 function shouldPreserveUserNutrition(food: Food) {
   return food.reviewed === true;
@@ -153,16 +165,14 @@ function refreshMealItemsFromFoods(items: MealItem[], foods: Food[]) {
   });
 }
 
-function refreshMealsFromFoods(meals: Meal[], foods: Food[]) {
-  const updatedAt = new Date().toISOString();
-
-  return meals.map((meal) => ({
-    ...meal,
-    items: refreshMealItemsFromFoods(meal.items, foods),
-    updatedAt,
-  }));
-}
-
+/**
+ * Important :
+ * Les meals sont un historique. On ne les rafraîchit jamais depuis la base foods.
+ * Un MealItem contient des snapshots nutritionnels figés au moment de l’ajout.
+ *
+ * Les templates, eux, sont des bases réutilisables : ils peuvent suivre les corrections
+ * de la base foods pour que les futurs repas soient meilleurs.
+ */
 function refreshMealTemplatesFromFoods(
   mealTemplates: MealTemplate[],
   foods: Food[]
@@ -202,7 +212,10 @@ function normalizeImportedData(input: Partial<AppData>): AppData {
     defaultMealTemplatesAdded: true,
     profile: input.profile ?? defaultProfile,
     foods: mergedFoods,
-    meals: refreshMealsFromFoods(meals, mergedFoods),
+
+    // Ne jamais recalculer l’historique à l’import.
+    meals,
+
     mealTemplates: refreshMealTemplatesFromFoods(mergedTemplates, mergedFoods),
     goals: input.goals ?? defaultGoals,
     weightLogs: Array.isArray(input.weightLogs) ? input.weightLogs : [],
@@ -240,7 +253,7 @@ export function useNutritionStore() {
   useEffect(() => {
     if (!hasLoaded) return;
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    writeLocalStorage(data);
   }, [data, hasLoaded]);
 
   const foods = useMemo(
@@ -298,7 +311,11 @@ export function useNutritionStore() {
       return {
         ...current,
         foods: mergedFoods,
-        meals: refreshMealsFromFoods(current.meals, mergedFoods),
+
+        // Ne jamais recalculer les repas existants.
+        meals: current.meals,
+
+        // Les templates peuvent être rafraîchis pour les futurs ajouts.
         mealTemplates: refreshMealTemplatesFromFoods(
           current.mealTemplates,
           mergedFoods
@@ -349,61 +366,18 @@ export function useNutritionStore() {
           : food
       );
 
-      const updatedFood = updatedFoods.find((food) => food.id === foodId);
-
-      if (!updatedFood) {
-        return {
-          ...current,
-          foods: updatedFoods,
-        };
-      }
-
-      const foodForRefresh: Food = updatedFood;
-
-      function refreshItem(item: MealItem): MealItem {
-        if (item.foodId !== foodId) {
-          return item;
-        }
-
-        const refreshedItem = buildMealItem(foodForRefresh, item.quantityG);
-
-        return {
-          ...refreshedItem,
-          id: item.id,
-        };
-      }
-
-      function hasFoodInItems(items: MealItem[]) {
-        return items.some((item) => item.foodId === foodId);
-      }
-
       return {
         ...current,
         foods: updatedFoods,
 
-        meals: current.meals.map((meal) => {
-          if (!hasFoodInItems(meal.items)) {
-            return meal;
-          }
+        // Important : modifier un aliment ne modifie jamais le journal passé.
+        meals: current.meals,
 
-          return {
-            ...meal,
-            items: meal.items.map(refreshItem),
-            updatedAt,
-          };
-        }),
-
-        mealTemplates: current.mealTemplates.map((template) => {
-          if (!hasFoodInItems(template.items)) {
-            return template;
-          }
-
-          return {
-            ...template,
-            items: template.items.map(refreshItem),
-            updatedAt,
-          };
-        }),
+        // Les templates ne sont pas un historique : on les met à jour pour les prochains repas.
+        mealTemplates: refreshMealTemplatesFromFoods(
+          current.mealTemplates,
+          updatedFoods
+        ),
       };
     });
   }
@@ -580,18 +554,24 @@ export function useNutritionStore() {
   }
 
   function resetData() {
-    window.localStorage.removeItem(STORAGE_KEY);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore localStorage failures.
+    }
+
     setData(defaultData);
   }
 
   function importData(nextData: Partial<AppData>) {
     const normalized = normalizeImportedData(nextData);
+
     setData(normalized);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    writeLocalStorage(normalized);
   }
 
   function exportData() {
-    return data;
+    return cloneAppData(data);
   }
 
   function getMealsByDate(date = todayLocalDate()) {
