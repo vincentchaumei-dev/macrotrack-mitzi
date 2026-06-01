@@ -66,9 +66,9 @@ export function PremiumMealCard({
   const isFeatured = variant === "featured";
 
   const gradients = [
-    "from-[#E94B4B] via-[#E94B4B] to-[#B92D35]",
-    "from-[#171717] via-[#2D2825] to-[#4A3632]",
-    "from-[#F6C766] via-[#E94B4B] to-[#B92D35]",
+    "bg-[linear-gradient(145deg,var(--mt-rouge-lit)_0%,var(--mt-rouge)_48%,var(--mt-rouge-deep)_100%)]",
+    "bg-[linear-gradient(145deg,var(--mt-ink)_0%,#2D2528_55%,var(--mt-rouge-deep)_100%)]",
+    "bg-[linear-gradient(145deg,var(--mt-rouge-wash)_0%,var(--mt-rouge)_48%,var(--mt-rouge-deep)_100%)]",
   ];
 
   const visibleItems = items.slice(0, maxItems);
@@ -77,7 +77,7 @@ export function PremiumMealCard({
   if (isFeatured) {
     return (
       <article
-        className={`ui-float relative overflow-hidden rounded-[44px] bg-gradient-to-br ${
+        className={`ui-float relative overflow-hidden rounded-[44px] ${
           gradients[accentIndex % gradients.length]
         } p-6 text-white shadow-[0_30px_80px_rgba(28,21,18,0.18)] ${className}`}
       >
@@ -163,23 +163,23 @@ export function PremiumMealCard({
           </div>
 
           {eyebrow && (
-            <p className="mt-4 text-xs font-black uppercase tracking-wide text-[#E94B4B]">
+            <p className="mt-4 text-xs font-black uppercase tracking-wide text-[var(--mt-rouge)]">
               {eyebrow}
             </p>
           )}
 
-          <h3 className="mt-1 text-2xl font-black tracking-[-0.055em] text-[#171717]">
+          <h3 className="mt-1 text-2xl font-black tracking-[-0.055em] text-[var(--mt-ink)]">
             {title}
           </h3>
 
           {description && (
-            <p className="mt-3 text-sm leading-7 text-[#7A746E]">
+            <p className="mt-3 text-sm leading-7 text-[var(--mt-ink-2)]">
               {description}
             </p>
           )}
         </div>
 
-        <div className="shrink-0 rounded-full bg-[#FFE1DD] px-4 py-2 text-sm font-black text-[#B92D35]">
+        <div className="shrink-0 rounded-full bg-[var(--mt-rouge-wash)] px-4 py-2 text-sm font-black text-[var(--mt-rouge-deep)]">
           {formatMacro(safeMacro(totals.calories), " kcal")}
         </div>
       </div>
@@ -204,19 +204,19 @@ export function PremiumMealCard({
           {visibleItems.map((item) => (
             <div
               key={item.id}
-              className="flex flex-col justify-between gap-1 rounded-[24px] bg-white px-4 py-3 text-sm ring-1 ring-black/[0.055] md:flex-row"
+              className="flex flex-col justify-between gap-1 rounded-[24px] bg-white px-4 py-3 text-sm ring-1 ring-[var(--mt-line)] md:flex-row"
             >
-              <span className="font-black text-[#171717]">
+              <span className="font-black text-[var(--mt-ink)]">
                 {item.name} · {item.quantityG} g
               </span>
-              <span className="text-[#7A746E]">
+              <span className="text-[var(--mt-ink-2)]">
                 {item.calories ?? "—"} kcal · {item.proteinG ?? "—"} P
               </span>
             </div>
           ))}
 
           {hiddenItemsCount > 0 && (
-            <div className="rounded-[24px] bg-white/70 px-4 py-3 text-sm font-black text-[#7A746E] ring-1 ring-black/[0.055]">
+            <div className="rounded-[24px] bg-white/70 px-4 py-3 text-sm font-black text-[var(--mt-ink-2)] ring-1 ring-[var(--mt-line)]">
               +{hiddenItemsCount} autre(s) aliment(s)
             </div>
           )}
@@ -238,11 +238,11 @@ function MealBadge({ badge }: { badge: PremiumMealCardBadge }) {
   const tone = badge.tone ?? "cream";
 
   const styles = {
-    red: "bg-[#FFE1DD] text-[#B92D35]",
-    dark: "bg-[#171717] text-white",
-    cream: "bg-white text-[#7A746E] ring-1 ring-black/[0.06]",
-    green: "bg-green-100 text-green-800",
-    blue: "bg-sky-100 text-sky-800",
+    red: "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]",
+    dark: "bg-[var(--mt-ink)] text-white",
+    cream: "bg-white text-[var(--mt-ink-2)] ring-1 ring-[var(--mt-line)]",
+    green: "bg-[var(--mt-success-soft)] text-[var(--mt-success)]",
+    blue: "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]",
   };
 
   return <span className={`ui-pill ${styles[tone]}`}>{badge.label}</span>;
@@ -266,7 +266,7 @@ function MealAction({
 
   const featuredStyles = {
     primary:
-      "rounded-full bg-white px-5 py-3 text-sm font-black text-[#171717] shadow-[0_18px_34px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:bg-[#FFF2EE]",
+      "rounded-full bg-white px-5 py-3 text-sm font-black text-[var(--mt-ink)] shadow-[0_18px_34px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:bg-[var(--mt-card-soft)]",
     soft:
       "rounded-full bg-white/16 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/22",
     ghost:
@@ -301,9 +301,9 @@ function MealAction({
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[24px] bg-white p-4 ring-1 ring-black/[0.055]">
-      <p className="text-xs font-bold text-[#7A746E]">{label}</p>
-      <p className="mt-1 font-black text-[#171717]">{value}</p>
+    <div className="rounded-[24px] bg-white p-4 ring-1 ring-[var(--mt-line)]">
+      <p className="text-xs font-bold text-[var(--mt-ink-2)]">{label}</p>
+      <p className="mt-1 font-black text-[var(--mt-ink)]">{value}</p>
     </div>
   );
 }

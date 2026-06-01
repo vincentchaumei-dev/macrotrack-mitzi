@@ -15,12 +15,14 @@ export function PageHeader({
   return (
     <header className="mb-9 flex flex-col justify-between gap-6 md:flex-row md:items-start">
       <div>
-        <p className="text-sm font-black text-[#E94B4B]">{eyebrow}</p>
-        <h1 className="ui-page-title mt-3 max-w-4xl font-black text-[#161412]">
-  {title}
-</h1>
+        <p className="text-sm font-black text-[var(--mt-rouge)]">{eyebrow}</p>
+
+        <h1 className="ui-page-title mt-3 max-w-4xl font-black text-[var(--mt-ink)]">
+          {title}
+        </h1>
+
         {description && (
-          <p className="ui-page-text mt-5 max-w-2xl text-sm text-[#7A746E] md:text-base">
+          <p className="ui-page-text mt-5 max-w-2xl text-sm text-[var(--mt-ink-2)] md:text-base">
             {description}
           </p>
         )}
@@ -40,17 +42,11 @@ export function PremiumCard({
   className?: string;
   tint?: "white" | "cream" | "red" | "dark";
 }) {
-  if (tint === "red") {
-    return <div className={`ui-card p-5 sm:p-6 ${className}`}>{children}</div>;
-  }
-
-  if (tint === "cream") {
-    return <div className={`ui-card p-5 sm:p-6 ${className}`}>{children}</div>;
-  }
-
   if (tint === "dark") {
     return (
-      <div className={`rounded-[42px] bg-[#171717] p-6 text-white shadow-[0_26px_70px_rgba(23,23,23,0.18)] ${className}`}>
+      <div
+        className={`rounded-[42px] bg-[var(--mt-ink)] p-6 text-white shadow-[0_26px_70px_rgba(23,19,24,0.18)] ${className}`}
+      >
         {children}
       </div>
     );
@@ -70,11 +66,15 @@ export function StatCard({
 }) {
   return (
     <div className="ui-card ui-float p-5">
-      <p className="text-sm font-bold text-[#7A746E]">{label}</p>
-      <p className="mt-2 text-3xl font-black tracking-[-0.055em] text-[#171717]">
+      <p className="text-sm font-bold text-[var(--mt-ink-2)]">{label}</p>
+      <p className="mt-2 text-3xl font-black tracking-[-0.055em] text-[var(--mt-ink)]">
         {value}
       </p>
-      {detail && <p className="mt-2 text-sm leading-5 text-[#7A746E]">{detail}</p>}
+      {detail && (
+        <p className="mt-2 text-sm leading-5 text-[var(--mt-ink-2)]">
+          {detail}
+        </p>
+      )}
     </div>
   );
 }
@@ -193,11 +193,11 @@ export function Pill({
   tone?: "cream" | "red" | "dark" | "green" | "blue";
 }) {
   const tones = {
-    cream: "bg-white text-[#7A746E] ring-1 ring-black/[0.06]",
-    red: "bg-[#FFE1DD] text-[#B92D35]",
-    dark: "bg-[#171717] text-white",
-    green: "bg-green-100 text-green-800",
-    blue: "bg-sky-100 text-sky-800",
+    cream: "bg-white text-[var(--mt-ink-2)] ring-1 ring-[var(--mt-line)]",
+    red: "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]",
+    dark: "bg-[var(--mt-ink)] text-white",
+    green: "bg-[var(--mt-success-soft)] text-[var(--mt-success)]",
+    blue: "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]",
   };
 
   return <span className={`ui-pill ${tones[tone]}`}>{children}</span>;
@@ -212,7 +212,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-black text-[#171717]">
+      <span className="mb-2 block text-sm font-black text-[var(--mt-ink)]">
         {label}
       </span>
       {children}
@@ -230,11 +230,11 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-[36px] border border-dashed border-black/10 bg-[#FFFAF5]/82 p-9 text-center">
-      <p className="text-xl font-black tracking-[-0.035em] text-[#171717]">
+    <div className="rounded-[36px] border border-dashed border-[var(--mt-line-2)] bg-[var(--mt-card-soft)]/80 p-9 text-center">
+      <p className="text-xl font-black tracking-[-0.035em] text-[var(--mt-ink)]">
         {title}
       </p>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#7A746E]">
+      <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[var(--mt-ink-2)]">
         {text}
       </p>
       {action && <div className="mt-6 flex justify-center">{action}</div>}
@@ -251,10 +251,14 @@ export function SectionTitle({
 }) {
   return (
     <div>
-      <h2 className="ui-section-title font-black text-[#171717]">
-  {title}
-</h2>
-      {text && <p className="mt-3 text-sm leading-7 text-[#7A746E]">{text}</p>}
+      <h2 className="ui-section-title font-black text-[var(--mt-ink)]">
+        {title}
+      </h2>
+      {text && (
+        <p className="mt-3 text-sm leading-7 text-[var(--mt-ink-2)]">
+          {text}
+        </p>
+      )}
     </div>
   );
 }
