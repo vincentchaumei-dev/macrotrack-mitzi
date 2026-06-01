@@ -3030,3 +3030,296 @@ a {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* =========================================================
+   MACROTRACK GLOBAL COHERENCE V8
+   typography / hierarchy / cards / UI consistency
+   ========================================================= */
+
+   :root {
+    --mt-bg: #faf7f3;
+    --mt-bg-warm: #f2ece4;
+    --mt-card: #ffffff;
+    --mt-card-soft: #fcfaf7;
+  
+    --mt-ink: #171318;
+    --mt-ink-2: #5f5965;
+    --mt-ink-3: #8b848f;
+  
+    --mt-line: #ece6de;
+    --mt-line-2: #e2dbd1;
+  
+    --mt-success: #4e9678;
+    --mt-success-soft: #e0eee7;
+    --mt-warn: #c68a3a;
+    --mt-warn-soft: #f5e8d5;
+  
+    --mt-prot: #c53350;
+    --mt-carb: #d69b3f;
+    --mt-fat: #6e7ca6;
+    --mt-prot-soft: #f7dde2;
+    --mt-carb-soft: #f5e6cc;
+    --mt-fat-soft: #e2e6f0;
+  
+    --mt-shadow-sm: 0 1px 2px rgba(23, 19, 24, 0.04),
+      0 4px 12px -6px rgba(23, 19, 24, 0.08);
+    --mt-shadow: 0 1px 2px rgba(23, 19, 24, 0.04),
+      0 14px 32px -16px rgba(23, 19, 24, 0.16);
+    --mt-shadow-lift: 0 2px 5px rgba(23, 19, 24, 0.05),
+      0 28px 60px -24px rgba(23, 19, 24, 0.28);
+  
+    /* Famille unique pour éviter l’effet magazine / serif trop massif */
+    --mt-display: var(--mt-sans);
+  }
+  
+  /* Global app typography */
+  body {
+    color: var(--mt-ink);
+    font-family: var(--mt-sans);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  
+  .mt-display,
+  .ui-page-title,
+  .ui-section-title,
+  .mt-phone-shell h1,
+  .mt-phone-shell h2,
+  .mt-phone-shell h3 {
+    font-family: var(--mt-sans) !important;
+  }
+  
+  .mt-phone-shell main h1,
+  .mt-phone-shell main h1.mt-display,
+  .mt-phone-shell .ui-page-title {
+    font-size: clamp(30px, 8.4vw, 38px) !important;
+    line-height: 1.04 !important;
+    letter-spacing: -0.035em !important;
+    font-weight: 800 !important;
+  }
+  
+  .mt-phone-shell main h2,
+  .mt-phone-shell main h2.mt-display,
+  .mt-phone-shell .ui-section-title {
+    font-size: clamp(22px, 6.8vw, 30px) !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.028em !important;
+    font-weight: 800 !important;
+  }
+  
+  .mt-phone-shell main h3,
+  .mt-phone-shell main h3.mt-display {
+    font-size: clamp(18px, 5.4vw, 24px) !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.02em !important;
+    font-weight: 750 !important;
+  }
+  
+  .mt-phone-shell p,
+  .mt-phone-shell li {
+    color: var(--mt-ink-2);
+  }
+  
+  /* Dashboard number keeps impact */
+  .mt-big-cal-number {
+    font-family: var(--mt-sans) !important;
+    font-size: clamp(78px, 23vw, 104px) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.06em !important;
+  }
+  
+  .mt-immersive-macro-value,
+  .mt-meal-kcal-number,
+  .mt-phone-shell [class*="kcal"] {
+    font-family: var(--mt-sans) !important;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  /* Cards */
+  .mt-card,
+  .mt-soft-card,
+  .ui-card,
+  .ui-card-soft {
+    border-radius: 24px !important;
+    border: 1px solid var(--mt-line) !important;
+    box-shadow: var(--mt-shadow) !important;
+  }
+  
+  .mt-card,
+  .ui-card {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.93)),
+      var(--mt-card) !important;
+  }
+  
+  .mt-soft-card,
+  .ui-card-soft {
+    background:
+      linear-gradient(180deg, rgba(252, 250, 247, 1), rgba(250, 247, 243, 0.94)),
+      var(--mt-card-soft) !important;
+  }
+  
+  /* Buttons */
+  .mt-btn-primary,
+  .RecipePrimary,
+  .ImportPrimaryButton,
+  .AuditPrimaryButton,
+  .ui-button-primary {
+    border: none !important;
+    background: linear-gradient(
+      160deg,
+      var(--mt-rouge-lit) 0%,
+      var(--mt-rouge) 46%,
+      var(--mt-rouge-deep) 100%
+    ) !important;
+    color: #fff !important;
+    box-shadow:
+      0 16px 34px -12px rgba(192, 30, 60, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+  }
+  
+  .mt-btn-soft,
+  .FoodActionRed,
+  .SettingsSoftButton,
+  .AuditSoftButton,
+  .ui-button-soft {
+    background: var(--mt-rouge-wash) !important;
+    color: var(--mt-rouge-deep) !important;
+    border: 1px solid var(--mt-rouge-soft) !important;
+  }
+  
+  .FoodAction,
+  .JournalAction,
+  .SettingsNeutralButton,
+  .ImportSourceButton,
+  .AuditNeutralButton,
+  .ui-button-ghost {
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: var(--mt-ink) !important;
+    border: 1px solid var(--mt-line) !important;
+    box-shadow: var(--mt-shadow-sm) !important;
+  }
+  
+  .FoodActionDanger,
+  .RecipeDanger,
+  .SettingsDangerButton,
+  .ui-button-danger {
+    background: white !important;
+    color: #8a6d52 !important;
+    border: 1px solid #e2d8cd !important;
+    box-shadow: none !important;
+  }
+  
+  /* Inputs */
+  .AddInput,
+  .FoodInput,
+  .GoalInput,
+  .WeightInput,
+  .OnboardingInput,
+  .ImportInput,
+  .AuditInput,
+  .input,
+  .mt-input,
+  .mt-phone-shell input,
+  .mt-phone-shell select,
+  .mt-phone-shell textarea {
+    min-height: 48px !important;
+    border-radius: 18px !important;
+    border: 1px solid var(--mt-line) !important;
+    background: var(--mt-card-soft) !important;
+    color: var(--mt-ink) !important;
+    font-family: var(--mt-sans) !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    outline: none !important;
+  }
+  
+  .AddInput:focus,
+  .FoodInput:focus,
+  .GoalInput:focus,
+  .WeightInput:focus,
+  .OnboardingInput:focus,
+  .ImportInput:focus,
+  .AuditInput:focus,
+  .input:focus,
+  .mt-input:focus,
+  .mt-phone-shell input:focus,
+  .mt-phone-shell select:focus,
+  .mt-phone-shell textarea:focus {
+    border-color: rgba(192, 30, 60, 0.42) !important;
+    background: #fff !important;
+    box-shadow:
+      0 0 0 4px rgba(192, 30, 60, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
+  }
+  
+  /* Pills / badges */
+  .ui-pill,
+  .mt-pill {
+    font-family: var(--mt-sans) !important;
+    font-size: 11.5px !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.01em !important;
+  }
+  
+  /* Quick action final polish */
+  .mt-quick-action {
+    border-radius: 22px !important;
+    background: white !important;
+    border: 1px solid var(--mt-line) !important;
+    box-shadow: var(--mt-shadow-sm) !important;
+  }
+  
+  .mt-quick-action-primary {
+    background: linear-gradient(
+      160deg,
+      var(--mt-rouge-lit) 0%,
+      var(--mt-rouge) 46%,
+      var(--mt-rouge-deep) 100%
+    ) !important;
+    border-color: transparent !important;
+    box-shadow: var(--mt-shadow-red) !important;
+  }
+  
+  /* Macro colors available everywhere */
+  .dot-macro {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    flex: 0 0 auto;
+  }
+  
+  .dot-prot {
+    background: var(--mt-prot);
+  }
+  
+  .dot-carb {
+    background: var(--mt-carb);
+  }
+  
+  .dot-fat {
+    background: var(--mt-fat);
+  }
+  
+  /* Small screens */
+  @media (max-width: 390px) {
+    .mt-phone-shell main h1,
+    .mt-phone-shell main h1.mt-display,
+    .mt-phone-shell .ui-page-title {
+      font-size: clamp(29px, 8.2vw, 36px) !important;
+    }
+  
+    .mt-phone-shell main h2,
+    .mt-phone-shell main h2.mt-display,
+    .mt-phone-shell .ui-section-title {
+      font-size: clamp(21px, 6.4vw, 28px) !important;
+    }
+  
+    .mt-big-cal-number {
+      font-size: clamp(72px, 22vw, 96px) !important;
+    }
+  }
+  
+  /* END MACROTRACK GLOBAL COHERENCE V8
+     ========================================================= */
