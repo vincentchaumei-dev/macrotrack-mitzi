@@ -10,7 +10,6 @@ const allNavigation = [
   { label: "Ajouter", href: "/add", icon: "plus" },
   { label: "Aliments", href: "/foods", icon: "foods" },
   { label: "Importer", href: "/import", icon: "import" },
-  { label: "Audit", href: "/audit-foods", icon: "audit" },
   { label: "Objectifs", href: "/goals", icon: "goal" },
   { label: "Repas types", href: "/recipes", icon: "meal" },
   { label: "Poids", href: "/weight", icon: "weight" },
