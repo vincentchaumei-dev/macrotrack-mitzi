@@ -41,12 +41,6 @@ function getSourceLabel(source: Food["source"]) {
   return "Source inconnue";
 }
 
-function getMealStepLabel(itemsCount: number) {
-  if (itemsCount === 0) return "Construis ton repas";
-  if (itemsCount === 1) return "1 aliment ajouté";
-  return `${itemsCount} aliments ajoutés`;
-}
-
 function getFoodsById(foods: Food[]) {
   return new Map(foods.map((food) => [food.id, food]));
 }
@@ -175,7 +169,7 @@ export default function AddMealPage() {
       .slice(0, hasQuery || includeFullDatabase ? 24 : 10);
   }, [foods, query, includeFullDatabase]);
 
-  const draftMeal = {
+  const draftMeal: Meal = {
     id: "draft",
     date,
     type,
@@ -236,29 +230,28 @@ export default function AddMealPage() {
     <AppShell>
       <div className="space-y-5">
         <section className="pt-2">
-          <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
             Nouveau repas
           </p>
 
           <div className="mt-3 flex items-start justify-between gap-4">
-            <div>
-              <h1 className="mt-display text-[50px] font-semibold leading-[0.9] tracking-[-0.055em] text-[var(--mt-ink)]">
+            <div className="min-w-0">
+              <h1 className="mt-display text-[42px] font-black leading-[0.96] tracking-[-0.055em] text-[var(--mt-ink)]">
                 Ajouter
               </h1>
-              <p className="mt-4 max-w-[290px] text-[15px] leading-7 text-[var(--mt-ink-2)]">
-                Choisis un aliment, indique la quantité, puis construis ton
-                repas étape par étape.
+              <p className="mt-3 max-w-[300px] text-[14px] font-semibold leading-6 text-[var(--mt-ink-2)]">
+                Choisis un aliment, ajuste la quantité, puis enregistre le repas.
               </p>
             </div>
 
-            <div className="mt-card shrink-0 rounded-[22px] p-3 text-center">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mt-ink-2)]">
+            <div className="mt-card shrink-0 rounded-[22px] px-4 py-3 text-center">
+              <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--mt-ink-3)]">
                 Total
               </p>
-              <p className="mt-display mt-1 text-[30px] font-semibold leading-none tracking-[-0.04em] text-[var(--mt-ink)]">
+              <p className="mt-1 text-[28px] font-black leading-none tracking-[-0.05em] text-[var(--mt-ink)]">
                 {formatMacro(totals.calories, "")}
               </p>
-              <p className="text-[10px] font-black uppercase text-[var(--mt-ink-3)]">
+              <p className="mt-1 text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
                 kcal
               </p>
             </div>
@@ -267,23 +260,62 @@ export default function AddMealPage() {
 
         <section className="mt-card overflow-hidden rounded-[28px]">
           <div className="bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
-            <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/62">
-              Étape 1
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/64">
+                  Repas en cours
+                </p>
+                <h2 className="mt-2 text-[26px] font-black leading-none tracking-[-0.045em]">
+                  {items.length === 0
+                    ? "Encore vide"
+                    : `${items.length} aliment${items.length > 1 ? "s" : ""}`}
+                </h2>
+              </div>
 
-            <h2 className="mt-display mt-2 text-[32px] font-semibold leading-none tracking-[-0.04em]">
-              {getMealStepLabel(items.length)}
-            </h2>
+              <div className="rounded-full bg-white/16 px-3 py-2 text-[11px] font-black text-white ring-1 ring-white/18">
+                {mealTypeLabels[type]}
+              </div>
+            </div>
 
             <div className="mt-5 grid grid-cols-3 gap-2">
-              <SummaryGlass label="Prot." value={formatMacro(totals.proteinG, "g")} />
-              <SummaryGlass label="Gluc." value={formatMacro(totals.carbsG, "g")} />
-              <SummaryGlass label="Lip." value={formatMacro(totals.fatG, "g")} />
+              <SummaryGlass
+                label="Prot."
+                value={formatMacro(totals.proteinG, "g")}
+              />
+              <SummaryGlass
+                label="Gluc."
+                value={formatMacro(totals.carbsG, "g")}
+              />
+              <SummaryGlass
+                label="Lip."
+                value={formatMacro(totals.fatG, "g")}
+              />
             </div>
           </div>
 
           <div className="p-4">
-            <div className="grid grid-cols-2 gap-3">
+            <p className="mb-2 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
+              Type de repas
+            </p>
+
+            <div className="grid grid-cols-4 gap-2">
+              {mealTypeOrder.map((mealType) => (
+                <button
+                  key={mealType}
+                  type="button"
+                  onClick={() => setType(mealType)}
+                  className={`rounded-[16px] px-2 py-3 text-[11px] font-black leading-tight ${
+                    type === mealType
+                      ? "bg-[var(--mt-rouge)] text-white shadow-[var(--mt-shadow-red)]"
+                      : "bg-[var(--mt-card-soft)] text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
+                  }`}
+                >
+                  {mealTypeLabels[mealType]}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
               <label>
                 <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
                   Date
@@ -308,55 +340,48 @@ export default function AddMealPage() {
                 />
               </label>
             </div>
-
-            <div className="mt-4">
-              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
-                Type de repas
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                {mealTypeOrder.map((mealType) => (
-                  <button
-                    key={mealType}
-                    type="button"
-                    onClick={() => setType(mealType)}
-                    className={`rounded-[18px] px-3 py-3 text-[12px] font-black ${
-                      type === mealType
-                        ? "bg-[var(--mt-rouge)] text-white shadow-[var(--mt-shadow-red)]"
-                        : "bg-[var(--mt-card-soft)] text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
-                    }`}
-                  >
-                    {mealTypeLabels[mealType]}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </section>
 
         <section className="mt-card rounded-[28px] p-4">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
-                Étape 2
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+                Aliment
               </p>
-              <h2 className="mt-display mt-1 text-[26px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
-                Choisir un aliment
+              <h2 className="mt-1 text-[24px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
+                Que veux-tu ajouter ?
               </h2>
             </div>
 
             <button
               type="button"
               onClick={() => setIncludeFullDatabase((current) => !current)}
-              className={`rounded-full px-3 py-2 text-[11px] font-black ${
+              className={`shrink-0 rounded-full px-3 py-2 text-[10.5px] font-black ${
                 includeFullDatabase
                   ? "bg-[var(--mt-ink)] text-white"
                   : "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)] ring-1 ring-[var(--mt-rouge-soft)]"
               }`}
             >
-              {includeFullDatabase ? "Base complète" : "Ciqual"}
+              {includeFullDatabase ? "Base complète" : "Simple"}
             </button>
           </div>
+
+          <label className="relative mt-4 block">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--mt-ink-3)]">
+              <SearchIcon />
+            </span>
+
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setSelectedFoodId("");
+              }}
+              className="w-full rounded-[21px] border border-[var(--mt-line)] bg-[var(--mt-card-soft)] py-4 pl-12 pr-4 text-[15px] font-black text-[var(--mt-ink)] outline-none placeholder:text-[var(--mt-ink-3)]"
+              placeholder="Rechercher un aliment..."
+            />
+          </label>
 
           {!selectedFood && query.trim().length === 0 && (
             <div className="mt-4">
@@ -373,7 +398,7 @@ export default function AddMealPage() {
               </div>
 
               <div className="mt-4">
-                <QuickFoodsGrid
+                <QuickFoodsRail
                   foods={quickFoods}
                   mode={quickMode}
                   onSelect={selectFood}
@@ -382,30 +407,14 @@ export default function AddMealPage() {
             </div>
           )}
 
-          <label className="relative mt-4 block">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--mt-ink-3)]">
-              <SearchIcon />
-            </span>
-
-            <input
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setSelectedFoodId("");
-              }}
-              className="w-full rounded-[20px] border border-[var(--mt-line)] bg-[var(--mt-card-soft)] py-4 pl-12 pr-4 text-[15px] font-bold text-[var(--mt-ink)] outline-none placeholder:text-[var(--mt-ink-3)]"
-              placeholder="Œuf, poulet, riz..."
-            />
-          </label>
-
           {query.trim().length > 0 && !selectedFood && (
             <div className="mt-4 grid gap-2">
               {filteredFoods.length === 0 ? (
                 <div className="rounded-[22px] border border-dashed border-[var(--mt-line-2)] bg-[var(--mt-card-soft)] p-5 text-center">
-                  <p className="mt-display text-[20px] font-semibold text-[var(--mt-ink)]">
+                  <p className="text-[20px] font-black text-[var(--mt-ink)]">
                     Aucun aliment
                   </p>
-                  <p className="mt-2 text-[13px] leading-6 text-[var(--mt-ink-2)]">
+                  <p className="mt-2 text-[13px] font-semibold leading-6 text-[var(--mt-ink-2)]">
                     Essaie d’élargir la recherche ou d’inclure la base complète.
                   </p>
                 </div>
@@ -448,16 +457,16 @@ export default function AddMealPage() {
 
         <section className="mt-card rounded-[28px] p-5">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
-                Étape 3
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
+                Récap
               </p>
-              <h2 className="mt-display mt-1 text-[26px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
+              <h2 className="mt-1 text-[24px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
                 Repas en cours
               </h2>
             </div>
 
-            <div className="rounded-full bg-[var(--mt-rouge-wash)] px-3 py-2 text-[12px] font-black text-[var(--mt-rouge-deep)]">
+            <div className="shrink-0 rounded-full bg-[var(--mt-rouge-wash)] px-3 py-2 text-[12px] font-black text-[var(--mt-rouge-deep)]">
               {formatMacro(totals.calories, " kcal")}
             </div>
           </div>
@@ -465,11 +474,11 @@ export default function AddMealPage() {
           <div className="mt-5">
             {items.length === 0 ? (
               <div className="rounded-[22px] border border-dashed border-[var(--mt-line-2)] bg-[var(--mt-card-soft)] p-5 text-center">
-                <p className="mt-display text-[21px] font-semibold text-[var(--mt-ink)]">
-                  Encore vide
+                <p className="text-[20px] font-black text-[var(--mt-ink)]">
+                  Aucun aliment ajouté
                 </p>
-                <p className="mt-2 text-[13px] leading-6 text-[var(--mt-ink-2)]">
-                  Ajoute un premier aliment pour construire le repas.
+                <p className="mt-2 text-[13px] font-semibold leading-6 text-[var(--mt-ink-2)]">
+                  Sélectionne un aliment plus haut pour commencer le repas.
                 </p>
               </div>
             ) : (
@@ -516,7 +525,7 @@ function SummaryGlass({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[18px] border border-white/18 bg-white/14 p-3 backdrop-blur">
       <p className="text-[10.5px] font-bold text-white/72">{label}</p>
-      <p className="mt-1 font-[var(--mt-display)] text-[21px] font-semibold leading-none">
+      <p className="mt-1 text-[19px] font-black leading-none tracking-[-0.04em]">
         {value}
       </p>
     </div>
@@ -547,7 +556,7 @@ function QuickTab({
   );
 }
 
-function QuickFoodsGrid({
+function QuickFoodsRail({
   foods,
   mode,
   onSelect,
@@ -558,7 +567,7 @@ function QuickFoodsGrid({
 }) {
   const emptyText = {
     favorites: "Aucun favori pour le moment.",
-    recent: "Les aliments récents apparaîtront après tes premiers repas.",
+    recent: "Les aliments récents apparaîtront après les premiers repas.",
     frequent: "Les aliments fréquents apparaîtront avec l’usage.",
     essentials: "Aucun aliment essentiel disponible.",
   }[mode];
@@ -574,32 +583,28 @@ function QuickFoodsGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="flex gap-2 overflow-x-auto pb-1">
       {foods.map((food) => (
         <button
           key={food.id}
           type="button"
           onClick={() => onSelect(food)}
-          className="rounded-[20px] bg-white p-3 text-left shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
+          className="min-w-[150px] max-w-[150px] rounded-[20px] bg-white p-3 text-left shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
         >
-          <div className="flex items-start gap-2">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[13px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
-              <span className="mt-display text-[16px] font-semibold">
-                {food.name.slice(0, 1).toUpperCase()}
-              </span>
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-[12px] font-black leading-tight text-[var(--mt-ink)]">
-                {food.name}
-              </p>
-              <p className="mt-1 text-[10px] font-bold text-[var(--mt-ink-3)]">
-                {food.servingSizeG
-                  ? `${food.servingName || "Portion"} · ${food.servingSizeG}g`
-                  : `${food.caloriesPer100g ?? "—"} kcal`}
-              </p>
-            </div>
+          <div className="grid h-10 w-10 place-items-center rounded-[14px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
+            <span className="text-[16px] font-black">
+              {food.name.slice(0, 1).toUpperCase()}
+            </span>
           </div>
+
+          <p className="mt-3 line-clamp-2 text-[12px] font-black leading-tight text-[var(--mt-ink)]">
+            {food.name}
+          </p>
+          <p className="mt-2 text-[10px] font-bold text-[var(--mt-ink-3)]">
+            {food.servingSizeG
+              ? `${food.servingName || "Portion"} · ${food.servingSizeG}g`
+              : `${food.caloriesPer100g ?? "—"} kcal`}
+          </p>
         </button>
       ))}
     </div>
@@ -616,7 +621,7 @@ function FoodResult({ food, onSelect }: { food: Food; onSelect: () => void }) {
       className="flex w-full items-center gap-3 rounded-[22px] border border-[var(--mt-line)] bg-white p-3 text-left shadow-[var(--mt-shadow-sm)]"
     >
       <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] bg-gradient-to-br from-[var(--mt-rouge-lit)] to-[var(--mt-rouge-deep)] text-white">
-        <span className="mt-display text-[20px] font-semibold">
+        <span className="text-[19px] font-black">
           {food.name.slice(0, 1).toUpperCase()}
         </span>
       </div>
@@ -632,7 +637,7 @@ function FoodResult({ food, onSelect }: { food: Food; onSelect: () => void }) {
       </div>
 
       <div className="text-right">
-        <p className="mt-display text-[21px] font-semibold leading-none text-[var(--mt-ink)]">
+        <p className="text-[20px] font-black leading-none text-[var(--mt-ink)]">
           {food.caloriesPer100g ?? "—"}
         </p>
         <p className="mt-1 text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
@@ -668,11 +673,11 @@ function SelectedFoodCard({
   return (
     <div className="rounded-[24px] bg-[var(--mt-card-soft)] p-4 ring-1 ring-[var(--mt-line)]">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--mt-rouge)]">
             Sélectionné
           </p>
-          <h3 className="mt-2 text-[19px] font-black leading-tight tracking-[-0.02em] text-[var(--mt-ink)]">
+          <h3 className="mt-2 text-[18px] font-black leading-tight tracking-[-0.02em] text-[var(--mt-ink)]">
             {food.name}
           </h3>
           <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-2)]">
@@ -684,7 +689,7 @@ function SelectedFoodCard({
         <button
           type="button"
           onClick={onClear}
-          className="rounded-full bg-white px-3 py-2 text-[11px] font-black text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
+          className="shrink-0 rounded-full bg-white px-3 py-2 text-[11px] font-black text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
         >
           Changer
         </button>
@@ -692,7 +697,7 @@ function SelectedFoodCard({
 
       <label className="mt-4 block">
         <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
-          Quantité en grammes
+          Quantité
         </span>
         <input
           value={quantityG}
@@ -721,10 +726,22 @@ function SelectedFoodCard({
 
       {previewItem && (
         <div className="mt-4 grid grid-cols-4 gap-2">
-          <PreviewMini label="Kcal" value={formatMacro(previewItem.calories, "")} />
-          <PreviewMini label="Prot." value={formatMacro(previewItem.proteinG, "g")} />
-          <PreviewMini label="Gluc." value={formatMacro(previewItem.carbsG, "g")} />
-          <PreviewMini label="Lip." value={formatMacro(previewItem.fatG, "g")} />
+          <PreviewMini
+            label="Kcal"
+            value={formatMacro(previewItem.calories, "")}
+          />
+          <PreviewMini
+            label="Prot."
+            value={formatMacro(previewItem.proteinG, "g")}
+          />
+          <PreviewMini
+            label="Gluc."
+            value={formatMacro(previewItem.carbsG, "g")}
+          />
+          <PreviewMini
+            label="Lip."
+            value={formatMacro(previewItem.fatG, "g")}
+          />
         </div>
       )}
 
@@ -770,7 +787,7 @@ function MealItemRow({
   return (
     <div className="flex items-center gap-3 rounded-[22px] border border-[var(--mt-line)] bg-white p-3 shadow-[var(--mt-shadow-sm)]">
       <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[15px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
-        <span className="mt-display text-[18px] font-semibold">
+        <span className="text-[17px] font-black">
           {item.foodNameSnapshot.slice(0, 1).toUpperCase()}
         </span>
       </div>
@@ -785,7 +802,7 @@ function MealItemRow({
       </div>
 
       <div className="text-right">
-        <p className="mt-display text-[20px] font-semibold leading-none text-[var(--mt-ink)]">
+        <p className="text-[19px] font-black leading-none text-[var(--mt-ink)]">
           {formatMacro(item.calories, "")}
         </p>
         <p className="mt-1 text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
@@ -806,7 +823,14 @@ function MealItemRow({
 
 function SearchIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <circle cx="11" cy="11" r="7" />
       <path d="M21 21l-4-4" />
     </svg>

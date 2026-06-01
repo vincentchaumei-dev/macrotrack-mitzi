@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   calculateDayTotals,
@@ -145,6 +146,7 @@ function getCoachText({
 
 export default function Home() {
   const router = useRouter();
+  const confirm = useConfirm();
 
   const {
     profile,
@@ -181,24 +183,29 @@ export default function Home() {
     window.setTimeout(() => setFlashMessage(""), 2600);
   }
 
-  function handleCopyPreviousDay() {
+  async function handleCopyPreviousDay() {
     const sourceDate = shiftLocalDate(selectedDate, -1);
-
+  
     if (meals.length > 0) {
-      const confirmed = window.confirm(
-        "Cette journée contient déjà des repas. Copier la veille va les ajouter en plus. Tu continues ?"
-      );
-
+      const confirmed = await confirm({
+        title: "Copier la veille ?",
+        message:
+          "Cette journée contient déjà des repas. Les repas de la veille seront ajoutés en plus.",
+        confirmLabel: "Copier",
+        cancelLabel: "Annuler",
+        tone: "default",
+      });
+  
       if (!confirmed) return;
     }
-
+  
     const copiedCount = copyDay(sourceDate, selectedDate);
-
+  
     if (copiedCount === 0) {
       notify("Aucun repas trouvé sur la veille.");
       return;
     }
-
+  
     notify(
       `${copiedCount} repas copié${copiedCount > 1 ? "s" : ""} depuis la veille.`
     );
@@ -582,10 +589,10 @@ export default function Home() {
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                 {quickFoods.map((food) => (
                   <Link
-                  key={food.id}
-                  href="/add"
-                  className="mt-quick-food-card"
-                >
+  key={food.id}
+  href="/add"
+  className="mt-quick-food-card"
+>
                     <div className="grid h-9 w-9 place-items-center rounded-[13px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
                       <span className="text-[15px] font-black">
                         {food.name.slice(0, 1).toUpperCase()}
