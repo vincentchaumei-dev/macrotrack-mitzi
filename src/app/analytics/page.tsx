@@ -207,49 +207,33 @@ export default function AnalyticsPage() {
         <section className="mt-card rounded-[28px] p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="mt-display text-[25px] font-semibold tracking-[-0.03em] text-[var(--mt-ink)]">
-                Calories par jour
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--mt-rouge)]">
+                Calories
+              </p>
+              <h2 className="mt-display mt-1 text-[28px] font-black tracking-[-0.04em] text-[var(--mt-ink)]">
+                {averageCalories > 0 ? `${averageCalories} kcal` : "—"}
               </h2>
-              <p className="mt-2 text-[13px] leading-6 text-[var(--mt-ink-2)]">
-                Les journées sans données restent vides.
+              <p className="text-[12px] font-bold text-[var(--mt-ink-3)]">
+                moyenne journalière
               </p>
             </div>
-
             <span className="rounded-full bg-[var(--mt-rouge-wash)] px-3 py-1.5 text-[11px] font-black text-[var(--mt-rouge-deep)]">
-              Moy. {averageCalories || "—"}
+              Obj. {goals.calories}
             </span>
           </div>
 
-          <div className="mt-6 space-y-4">
-            {dayStats.map((day) => (
-              <div key={day.date}>
-                <div className="mb-2 flex items-center justify-between text-[12px] font-bold text-[var(--mt-ink-2)]">
-                  <span>{day.date}</span>
-                  <span>
-                    {day.hasData ? `${Math.round(day.calories)} kcal` : "—"}
-                  </span>
-                </div>
-
-                <div className="h-[10px] overflow-hidden rounded-full bg-[var(--mt-bg-warm)]">
-                  {day.hasData && (
-                    <div
-                      className="h-full rounded-full bg-[var(--mt-rouge)] shadow-[var(--mt-shadow-red)]"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          Math.round((day.calories / maxCalories) * 100)
-                        )}%`,
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-            ))}
+          <div className="mt-5">
+            <CaloriesBarChart
+              dayStats={dayStats}
+              maxCalories={maxCalories}
+              calorieGoal={goals.calories}
+              showLabels={period <= 14}
+            />
           </div>
         </section>
 
-        <section className="grid grid-cols-[1fr_0.82fr] gap-3">
-          <section className="rounded-[28px] bg-[var(--mt-ink)] p-5 text-white shadow-[var(--mt-shadow-lift)]">
+        <section className="grid grid-cols-2 gap-3">
+          <section className="mt-dark-card rounded-[28px] bg-[var(--mt-ink)] p-5 text-white shadow-[var(--mt-shadow-lift)]">
             <p className="text-[12px] font-black uppercase tracking-[0.16em] text-white/48">
               Résumé macros
             </p>
@@ -339,6 +323,80 @@ export default function AnalyticsPage() {
         <div className="h-10" />
       </div>
     </AppShell>
+  );
+}
+
+function CaloriesBarChart({
+  dayStats,
+  maxCalories,
+  calorieGoal,
+  showLabels,
+}: {
+  dayStats: { date: string; label: string; hasData: boolean; calories: number }[];
+  maxCalories: number;
+  calorieGoal: number;
+  showLabels: boolean;
+}) {
+  const today = todayLocalDate();
+  const CHART_H = 144;
+  const goalLineY =
+    calorieGoal > 0 && maxCalories > 0
+      ? CHART_H - (calorieGoal / maxCalories) * CHART_H
+      : -1;
+
+  return (
+    <div>
+      <div className="relative" style={{ height: CHART_H }}>
+        {goalLineY >= 0 && goalLineY <= CHART_H && (
+          <div
+            className="pointer-events-none absolute left-0 right-0 border-t border-dashed border-[var(--mt-rouge-soft)]"
+            style={{ top: goalLineY }}
+          />
+        )}
+        <div className="absolute inset-0 flex items-end gap-1">
+          {dayStats.map((day) => {
+            const barH =
+              day.hasData && maxCalories > 0
+                ? Math.max(8, (day.calories / maxCalories) * CHART_H)
+                : 0;
+            const isToday = day.date === today;
+
+            return (
+              <div key={day.date} className="flex flex-1 flex-col items-center justify-end h-full">
+                <div
+                  className={`w-full rounded-t-[5px] ${
+                    isToday
+                      ? "bg-[var(--mt-rouge)]"
+                      : day.hasData
+                        ? "bg-[var(--mt-rouge-soft)]"
+                        : "bg-[var(--mt-card-soft)] ring-1 ring-[var(--mt-line)]"
+                  }`}
+                  style={{ height: day.hasData ? barH : 6 }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {showLabels && (
+        <div className="mt-2 flex gap-1">
+          {dayStats.map((day) => (
+            <div key={day.date} className="flex-1 text-center">
+              <p
+                className={`text-[9px] font-black ${
+                  day.date === today
+                    ? "text-[var(--mt-rouge)]"
+                    : "text-[var(--mt-ink-3)]"
+                }`}
+              >
+                {day.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

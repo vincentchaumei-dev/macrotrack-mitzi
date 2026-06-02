@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   calculateDayTotals,
@@ -34,6 +35,8 @@ function getMealColor(index: number) {
 }
 
 export default function JournalPage() {
+  const confirm = useConfirm();
+
   const {
     goals,
     getMealsByDate,
@@ -55,19 +58,22 @@ export default function JournalPage() {
   const fat = toNumber(totals.fatG);
 
   const caloriePercent = getPercent(calories, goals.calories);
-  const proteinPercent = getPercent(protein, goals.proteinG);
-  const carbsPercent = getPercent(carbs, goals.carbsG);
-  const fatPercent = getPercent(fat, goals.fatG);
 
   function notify(text: string) {
     setMessage(text);
     window.setTimeout(() => setMessage(""), 2400);
   }
 
-  function handleDeleteMeal(meal: Meal) {
-    const confirmed = window.confirm(
-      `Supprimer "${meal.name || mealTypeLabels[meal.type]}" du journal ?`
-    );
+  async function handleDeleteMeal(meal: Meal) {
+    const mealName = meal.name || mealTypeLabels[meal.type];
+
+    const confirmed = await confirm({
+      title: "Supprimer ce repas ?",
+      message: `"${mealName}" sera retiré du journal. Cette action ne modifie pas les aliments enregistrés.`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      tone: "danger",
+    });
 
     if (!confirmed) return;
 
@@ -112,6 +118,10 @@ export default function JournalPage() {
   return (
     <AppShell>
       <div className="space-y-5">
+        {message && (
+          <div className="mt-dashboard-toast">{message}</div>
+        )}
+
         <section className="pt-2">
           <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
             Suivi quotidien
@@ -142,14 +152,8 @@ export default function JournalPage() {
           </div>
         </section>
 
-        {message && (
-          <div className="rounded-[18px] border border-[var(--mt-success-soft)] bg-[var(--mt-success-soft)] px-4 py-3 text-[13px] font-extrabold text-[var(--mt-success)]">
-            {message}
-          </div>
-        )}
-
         <section className="mt-card overflow-hidden rounded-[28px]">
-          <div className="bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
+          <div className="mt-red-card bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/68">
@@ -190,25 +194,10 @@ export default function JournalPage() {
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              <MacroGlass
-                label="Prot."
-                value={protein}
-                target={goals.proteinG}
-                percent={proteinPercent}
-              />
-              <MacroGlass
-                label="Gluc."
-                value={carbs}
-                target={goals.carbsG}
-                percent={carbsPercent}
-              />
-              <MacroGlass
-                label="Lip."
-                value={fat}
-                target={goals.fatG}
-                percent={fatPercent}
-              />
+            <div className="mt-5 space-y-3">
+              <JournalMacroRow label="Protéines" value={protein} target={goals.proteinG} color="#ffb3c6" />
+              <JournalMacroRow label="Glucides" value={carbs} target={goals.carbsG} color="#ffd882" />
+              <JournalMacroRow label="Lipides" value={fat} target={goals.fatG} color="#b4c8f0" />
             </div>
           </div>
         </section>
@@ -329,32 +318,47 @@ export default function JournalPage() {
   );
 }
 
-function MacroGlass({
+function JournalMacroRow({
   label,
   value,
   target,
-  percent,
+  color,
 }: {
   label: string;
   value: number;
   target: number;
-  percent: number;
+  color: string;
+}) {
+  const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-[10.5px] font-bold text-white/55">{label}</span>
+        <span className="text-[11px] font-black text-white/80">
+          {value}
+          <span className="text-white/40 font-semibold">/{target}g</span>
+        </span>
+      </div>
+      <div className="overflow-hidden rounded-full" style={{ height: 5, backgroundColor: "rgba(255,255,255,0.18)" }}>
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
+}
+
+function MealMacroPill({
+  color,
+  label,
+  value,
+}: {
+  color: string;
+  label: string;
+  value: string;
 }) {
   return (
-    <div className="rounded-[18px] border border-white/18 bg-white/14 p-3 backdrop-blur">
-      <p className="text-[10.5px] font-bold text-white/72">{label}</p>
-      <p className="mt-1 font-[var(--mt-display)] text-[20px] font-semibold leading-none">
-        {value}
-        <span className="font-[var(--mt-sans)] text-[10px] text-white/60">
-          /{target}
-        </span>
-      </p>
-      <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/22">
-        <div
-          className="h-full rounded-full bg-white"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
+    <div className="flex items-center gap-1.5 rounded-full bg-[var(--mt-card-soft)] px-2.5 py-1 ring-1 ring-[var(--mt-line)]">
+      <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ backgroundColor: color }} />
+      <span className="text-[10.5px] font-black text-[var(--mt-ink-2)]">{label} {value}</span>
     </div>
   );
 }
@@ -378,6 +382,7 @@ function MealTimelineCard({
   return (
     <article className="relative flex gap-3">
       <div
+        aria-hidden="true"
         className="relative z-10 mt-4 h-12 w-12 shrink-0 rounded-[16px] shadow-[var(--mt-shadow-sm)]"
         style={{ background: color }}
       />
@@ -406,25 +411,10 @@ function MealTimelineCard({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2 text-[12px] font-bold text-[var(--mt-ink-2)]">
-          <span>
-            <b className="text-[var(--mt-ink)]">
-              {formatMacro(totals.proteinG, "g")}
-            </b>{" "}
-            P
-          </span>
-          <span>
-            <b className="text-[var(--mt-ink)]">
-              {formatMacro(totals.carbsG, "g")}
-            </b>{" "}
-            G
-          </span>
-          <span>
-            <b className="text-[var(--mt-ink)]">
-              {formatMacro(totals.fatG, "g")}
-            </b>{" "}
-            L
-          </span>
+        <div className="mt-3 flex gap-1.5">
+          <MealMacroPill color="#c53350" label="P" value={`${formatMacro(totals.proteinG, "")}g`} />
+          <MealMacroPill color="#d69b3f" label="G" value={`${formatMacro(totals.carbsG, "")}g`} />
+          <MealMacroPill color="#6e7ca6" label="L" value={`${formatMacro(totals.fatG, "")}g`} />
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">

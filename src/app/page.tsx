@@ -111,35 +111,37 @@ function getRecentFoods(meals: Meal[], foods: Food[], limit = 8) {
 }
 
 function getCoachText({
-  caloriesRemaining,
+  calories,
+  caloriesTarget,
   protein,
-  proteinTarget,
 }: {
-  caloriesRemaining: number;
+  calories: number;
+  caloriesTarget: number;
   protein: number;
-  proteinTarget: number;
 }) {
-  const proteinRemaining = Math.max(0, proteinTarget - protein);
+  if (calories === 0) {
+    return <>Rien de noté pour l’instant. La journée commence.</>;
+  }
 
-  if (caloriesRemaining > 0) {
+  if (calories > caloriesTarget) {
     return (
       <>
-        Il reste <b>{caloriesRemaining} kcal</b>
-        {proteinRemaining > 0 ? (
-          <>
-            {" "}
-            et <b>{proteinRemaining} g de protéines</b>
-          </>
-        ) : null}{" "}
-        pour atteindre la base du jour.
+        Un peu au-dessus aujourd’hui. Rien de dramatique : ce qui compte, c’est la{" "}
+        <b>moyenne</b> et la régularité.
       </>
     );
   }
 
   return (
     <>
-      Un peu au-dessus aujourd’hui. Rien de dramatique : ce qui compte, c’est la{" "}
-      <b>moyenne</b> et la régularité.
+      <b>{calories} kcal</b>
+      {protein > 0 ? (
+        <>
+          {" "}
+          · <b>{protein} g de protéines</b>
+        </>
+      ) : null}{" "}
+      notées aujourd’hui.
     </>
   );
 }
@@ -215,14 +217,6 @@ export default function Home() {
   const protein = toNumber(totals.proteinG);
   const carbs = toNumber(totals.carbsG);
   const fat = toNumber(totals.fatG);
-
-  const caloriesRemaining = goals.calories - calories;
-  const proteinRemaining = Math.max(0, goals.proteinG - protein);
-
-  const caloriePercent = getPercent(calories, goals.calories);
-  const proteinPercent = getPercent(protein, goals.proteinG);
-  const carbsPercent = getPercent(carbs, goals.carbsG);
-  const fatPercent = getPercent(fat, goals.fatG);
 
   const tdee = calculateTdee(profile);
 
@@ -373,38 +367,33 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="mt-big-cal">
-              <div className="mt-big-cal-number">
-                {Math.max(0, caloriesRemaining)}
+            <div className="mt-6 flex items-center gap-5">
+              <CalorieRing consumed={calories} target={goals.calories} />
+              <div className="flex-1">
+                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.14em] text-white/60">
+                  Macros
+                </p>
+                <div className="space-y-3.5">
+                  <MacroRow
+                    label="Protéines"
+                    value={protein}
+                    target={goals.proteinG}
+                    color="#ffb3c6"
+                  />
+                  <MacroRow
+                    label="Glucides"
+                    value={carbs}
+                    target={goals.carbsG}
+                    color="#ffd882"
+                  />
+                  <MacroRow
+                    label="Lipides"
+                    value={fat}
+                    target={goals.fatG}
+                    color="#b4c8f0"
+                  />
+                </div>
               </div>
-              <div className="mt-big-cal-label">
-                kcal restantes · <b>{calories}</b> / {goals.calories} consommées
-              </div>
-            </div>
-
-            <div className="mt-progress-line">
-              <i style={{ width: `${caloriePercent}%` }} />
-            </div>
-
-            <div className="mt-immersive-macros">
-              <MacroGlass
-                label="Protéines"
-                value={protein}
-                target={goals.proteinG}
-                percent={proteinPercent}
-              />
-              <MacroGlass
-                label="Glucides"
-                value={carbs}
-                target={goals.carbsG}
-                percent={carbsPercent}
-              />
-              <MacroGlass
-                label="Lipides"
-                value={fat}
-                target={goals.fatG}
-                percent={fatPercent}
-              />
             </div>
           </div>
         </section>
@@ -428,19 +417,6 @@ export default function Home() {
             >
               Ajouter
             </Link>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <MetricCard
-              label="Calories"
-              value={`${Math.max(0, caloriesRemaining)}`}
-              detail="restantes"
-            />
-            <MetricCard
-              label="Protéines"
-              value={`${proteinRemaining}g`}
-              detail="restantes"
-            />
           </div>
 
           <section className="mt-card mt-4 rounded-[24px] p-4">
@@ -505,20 +481,31 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-7 gap-1.5">
+            <div className="mt-4 flex gap-1.5">
               {weeklyData.map((day) => (
-                <div key={day.date} className="text-center">
-                  <div className="mx-auto flex h-16 w-full max-w-[30px] items-end rounded-full bg-[var(--mt-card-soft)] p-1 ring-1 ring-[var(--mt-line)]">
-                    <div
-                      className={`w-full rounded-full ${
-                        day.active
-                          ? "bg-[var(--mt-rouge)]"
-                          : "bg-[var(--mt-rouge-soft)]"
-                      }`}
-                      style={{ height: `${Math.max(8, day.percent)}%` }}
-                    />
+                <div key={day.date} className="flex flex-1 flex-col items-center gap-2">
+                  <div
+                    className="relative w-full overflow-hidden rounded-[10px] bg-[var(--mt-card-soft)] ring-1 ring-[var(--mt-line)]"
+                    style={{ height: 64 }}
+                  >
+                    {day.tracked && (
+                      <div
+                        className={`absolute bottom-0 left-0 right-0 ${
+                          day.active
+                            ? "bg-[var(--mt-rouge)]"
+                            : "bg-[var(--mt-rouge-soft)]"
+                        }`}
+                        style={{ height: `${Math.max(10, day.percent)}%` }}
+                      />
+                    )}
                   </div>
-                  <p className="mt-2 text-[10px] font-black text-[var(--mt-ink-3)]">
+                  <p
+                    className={`text-[10px] font-black ${
+                      day.active
+                        ? "text-[var(--mt-rouge)]"
+                        : "text-[var(--mt-ink-3)]"
+                    }`}
+                  >
                     {day.label}
                   </p>
                 </div>
@@ -625,9 +612,9 @@ export default function Home() {
             </div>
             <p>
               {getCoachText({
-                caloriesRemaining,
+                calories,
+                caloriesTarget: goals.calories,
                 protein,
-                proteinTarget: goals.proteinG,
               })}
             </p>
           </div>
@@ -682,51 +669,93 @@ function QuickActionButton({
   );
 }
 
-function MacroGlass({
-  label,
-  value,
+function CalorieRing({
+  consumed,
   target,
-  percent,
 }: {
-  label: string;
-  value: number;
+  consumed: number;
   target: number;
-  percent: number;
 }) {
+  const SIZE = 160;
+  const STROKE = 12;
+  const RADIUS = (SIZE - STROKE) / 2;
+  const CIRC = 2 * Math.PI * RADIUS;
+  const ratio = target > 0 ? consumed / target : 0;
+  const dash = Math.min(ratio, 1) * CIRC;
+
   return (
-    <div className="mt-immersive-macro">
-      <div className="mt-immersive-macro-label">{label}</div>
-      <div className="mt-immersive-macro-value">
-        {value}
-        <small>/{target}g</small>
-      </div>
-      <div className="mt-mini-bar">
-        <i style={{ width: `${percent}%` }} />
+    <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }}>
+      <svg
+        width={SIZE}
+        height={SIZE}
+        style={{ transform: "rotate(-90deg)" }}
+        aria-hidden="true"
+      >
+        <circle
+          cx={SIZE / 2}
+          cy={SIZE / 2}
+          r={RADIUS}
+          fill="none"
+          stroke="rgba(255,255,255,0.18)"
+          strokeWidth={STROKE}
+        />
+        <circle
+          cx={SIZE / 2}
+          cy={SIZE / 2}
+          r={RADIUS}
+          fill="none"
+          stroke="white"
+          strokeWidth={STROKE}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${CIRC}`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <p className="text-[28px] font-black leading-none tracking-[-0.04em] text-white">
+          {consumed > 0 ? consumed : "—"}
+        </p>
+        <p className="mt-0.5 text-[10.5px] font-bold text-white/60">kcal</p>
+        {target > 0 && (
+          <p className="mt-1 text-[9.5px] font-semibold text-white/40">
+            / {target}
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-function MetricCard({
+function MacroRow({
   label,
   value,
-  detail,
+  target,
+  color,
 }: {
   label: string;
-  value: string;
-  detail: string;
+  value: number;
+  target: number;
+  color: string;
 }) {
+  const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
+
   return (
-    <div className="mt-card rounded-[24px] p-4">
-      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mt-ink-3)]">
-        {label}
-      </p>
-      <p className="mt-2 text-[26px] font-black tracking-[-0.05em] text-[var(--mt-ink)]">
-        {value}
-      </p>
-      <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-2)]">
-        {detail}
-      </p>
+    <div>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-[10.5px] font-bold text-white/55">{label}</span>
+        <span className="text-[11px] font-black text-white/80">
+          {value}
+          <span className="text-white/40 font-semibold">/{target}g</span>
+        </span>
+      </div>
+      <div
+        className="overflow-hidden rounded-full"
+        style={{ height: 5, backgroundColor: "rgba(255,255,255,0.18)" }}
+      >
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
+      </div>
     </div>
   );
 }
@@ -744,48 +773,79 @@ function MealTypeCard({
   const hasMeals = meals.length > 0;
 
   return (
-    <article className="flex items-center gap-3 rounded-[22px] bg-[var(--mt-card-soft)] p-3 ring-1 ring-[var(--mt-line)]">
-      <div
-        className="h-12 w-12 shrink-0 rounded-[16px]"
-        style={{ background: getMealGradient(index) }}
-      />
+    <article className="rounded-[20px] bg-[var(--mt-card-soft)] p-3.5 ring-1 ring-[var(--mt-line)]">
+      <div className="flex items-center gap-3">
+        <div
+          className="h-11 w-11 shrink-0 rounded-[14px]"
+          style={{ background: getMealGradient(index) }}
+        />
 
-      <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-black text-[var(--mt-ink)]">
-          {mealTypeLabels[mealType]}
-        </p>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-black text-[var(--mt-ink)]">
+            {mealTypeLabels[mealType]}
+          </p>
+          {hasMeals ? (
+            <p className="mt-0.5 line-clamp-1 text-[11.5px] font-bold text-[var(--mt-ink-3)]">
+              {meals
+                .map((meal) => meal.name || mealTypeLabels[meal.type])
+                .join(", ")}
+            </p>
+          ) : (
+            <p className="mt-0.5 text-[11.5px] font-bold text-[var(--mt-ink-3)]">
+              Rien de noté
+            </p>
+          )}
+        </div>
 
         {hasMeals ? (
-          <p className="mt-1 line-clamp-1 text-[12px] font-bold text-[var(--mt-ink-2)]">
-            {meals
-              .map((meal) => meal.name || mealTypeLabels[meal.type])
-              .join(", ")}
-          </p>
+          <div className="shrink-0 text-right">
+            <p className="text-[22px] font-black leading-none tracking-[-0.04em] text-[var(--mt-ink)]">
+              {formatMacro(totals.calories, "")}
+            </p>
+            <p className="text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
+              kcal
+            </p>
+          </div>
         ) : (
-          <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-3)]">
-            Pas encore ajouté
-          </p>
+          <Link
+            href="/add"
+            className="shrink-0 rounded-full bg-white px-3 py-2 text-[11px] font-black text-[var(--mt-rouge)] ring-1 ring-[var(--mt-line)]"
+          >
+            Ajouter
+          </Link>
         )}
       </div>
 
-      {hasMeals ? (
-        <div className="text-right">
-          <p className="text-[19px] font-black leading-none text-[var(--mt-ink)]">
-            {formatMacro(totals.calories, "")}
-          </p>
-          <p className="mt-1 text-[9px] font-black uppercase text-[var(--mt-ink-3)]">
-            kcal
-          </p>
+      {hasMeals && (
+        <div className="mt-2.5 flex gap-1.5">
+          <MacroPill color="#c53350" label="P" value={`${formatMacro(totals.proteinG, "")}g`} />
+          <MacroPill color="#d69b3f" label="G" value={`${formatMacro(totals.carbsG, "")}g`} />
+          <MacroPill color="#6e7ca6" label="L" value={`${formatMacro(totals.fatG, "")}g`} />
         </div>
-      ) : (
-        <Link
-          href="/add"
-          className="rounded-full bg-white px-3 py-2 text-[11px] font-black text-[var(--mt-rouge)] ring-1 ring-[var(--mt-line)]"
-        >
-          Ajouter
-        </Link>
       )}
     </article>
+  );
+}
+
+function MacroPill({
+  color,
+  label,
+  value,
+}: {
+  color: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 ring-1 ring-[var(--mt-line)]">
+      <span
+        className="h-[7px] w-[7px] shrink-0 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      <span className="text-[10.5px] font-black text-[var(--mt-ink-2)]">
+        {label} {value}
+      </span>
+    </div>
   );
 }
 

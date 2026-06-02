@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   compareFoodsForSearch,
@@ -151,6 +152,7 @@ function formatValue(value: number | null | undefined, suffix = "") {
 }
 
 export default function FoodsPage() {
+  const confirm = useConfirm();
   const { foods, addFood, updateFood, deleteFood } = useNutritionStore();
 
   const [form, setForm] = useState<FoodFormState>(emptyForm);
@@ -161,6 +163,7 @@ export default function FoodsPage() {
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [includeFullDatabase, setIncludeFullDatabase] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [message, setMessage] = useState("");
 
   const editingFood = foods.find((food) => food.id === editingFoodId) ?? null;
 
@@ -216,6 +219,11 @@ export default function FoodsPage() {
   const favoriteFoodsCount = foods.filter((food) => food.isFavorite).length;
   const essentialFoodsCount = foods.filter((food) => food.isEssential).length;
 
+  function notify(text: string) {
+    setMessage(text);
+    window.setTimeout(() => setMessage(""), 2400);
+  }
+
   function updateFormField(key: keyof FoodFormState, value: string) {
     setForm((current) => ({
       ...current,
@@ -238,12 +246,14 @@ export default function FoodsPage() {
 
     if (editingFoodId) {
       updateFood(editingFoodId, foodInput);
+      notify("Aliment modifié.");
     } else {
       addFood({
         ...foodInput,
         isFavorite: false,
         isEssential: false,
       });
+      notify("Aliment ajouté.");
     }
 
     resetForm();
@@ -265,12 +275,18 @@ export default function FoodsPage() {
     updateFood(food.id, {
       isFavorite: !food.isFavorite,
     });
+
+    notify(food.isFavorite ? "Retiré des favoris." : "Ajouté aux favoris.");
   }
 
-  function confirmDelete(food: Food) {
-    const confirmed = window.confirm(
-      `Supprimer l’aliment "${food.name}" ? Les anciens repas garderont leurs valeurs déjà enregistrées.`
-    );
+  async function confirmDelete(food: Food) {
+    const confirmed = await confirm({
+      title: "Supprimer cet aliment ?",
+      message: `"${food.name}" sera supprimé de la base alimentaire. Les anciens repas garderont leurs valeurs déjà enregistrées.`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      tone: "danger",
+    });
 
     if (!confirmed) return;
 
@@ -279,11 +295,15 @@ export default function FoodsPage() {
     if (editingFoodId === food.id) {
       resetForm();
     }
+
+    notify("Aliment supprimé.");
   }
 
   return (
     <AppShell>
       <div className="space-y-5">
+        {message && <div className="mt-dashboard-toast">{message}</div>}
+
         <section className="pt-2">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -659,7 +679,7 @@ function FoodCard({
           <div className="flex flex-wrap gap-1.5">
             {food.isEssential && <Badge tone="red">Essentiel</Badge>}
             {food.isFavorite && <Badge tone="dark">Favori</Badge>}
-            <Badge tone={complete ? "green" : "red"}>
+            <Badge tone={complete ? "green" : "amber"}>
               {complete ? "Complet" : "À compléter"}
             </Badge>
           </div>
@@ -727,7 +747,7 @@ function FilterChip({
   active,
   onClick,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   active: boolean;
   onClick: () => void;
 }) {
@@ -751,7 +771,7 @@ function Field({
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label className="block">
@@ -767,15 +787,17 @@ function Badge({
   children,
   tone,
 }: {
-  children: React.ReactNode;
-  tone: "red" | "dark" | "green";
+  children: ReactNode;
+  tone: "red" | "dark" | "green" | "amber";
 }) {
   const className =
     tone === "dark"
       ? "bg-[var(--mt-ink)] text-white"
       : tone === "green"
-      ? "bg-[var(--mt-success-soft)] text-[var(--mt-success)]"
-      : "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]";
+        ? "bg-[var(--mt-success-soft)] text-[var(--mt-success)]"
+        : tone === "amber"
+          ? "bg-[var(--mt-warn-soft)] text-[var(--mt-warn)]"
+          : "bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]";
 
   return (
     <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${className}`}>

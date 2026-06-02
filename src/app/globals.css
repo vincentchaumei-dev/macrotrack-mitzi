@@ -531,11 +531,15 @@ button:disabled {
    ========================================================= */
 
    :root {
+     /* Tailwind v4 requires --color-white for text-white utility */
+     --color-white: #ffffff;
+     --color-black: #000000;
+
      --mt-bg: #faf7f3;
      --mt-bg-warm: #f2ece4;
      --mt-card: #ffffff;
      --mt-card-soft: #fcfaf7;
-   
+
      --mt-ink: #171318;
      --mt-ink-2: #6a6470;
      --mt-ink-3: #a8a2ac;
@@ -3119,7 +3123,20 @@ a {
   .mt-phone-shell li {
     color: var(--mt-ink-2);
   }
-  
+
+  /* Red/dark colored backgrounds: inherit section color (white) */
+  .mt-phone-shell .mt-immersive p,
+  .mt-phone-shell .mt-immersive li,
+  .mt-phone-shell .mt-immersive span,
+  .mt-phone-shell .mt-red-card p,
+  .mt-phone-shell .mt-red-card li,
+  .mt-phone-shell .mt-red-card span,
+  .mt-phone-shell .mt-dark-card p,
+  .mt-phone-shell .mt-dark-card li,
+  .mt-phone-shell .mt-dark-card span {
+    color: inherit;
+  }
+
   /* Dashboard number keeps impact */
   .mt-big-cal-number {
     font-family: var(--mt-sans) !important;

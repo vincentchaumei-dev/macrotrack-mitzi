@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useRef, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import { AppData } from "@/types/nutrition";
 
@@ -23,6 +24,8 @@ function downloadJson(data: AppData) {
 }
 
 export default function SettingsPage() {
+  const confirm = useConfirm();
+
   const {
     foods,
     meals,
@@ -58,9 +61,14 @@ export default function SettingsPage() {
       const text = await file.text();
       const parsed = JSON.parse(text) as Partial<AppData>;
 
-      const confirmed = window.confirm(
-        "Importer cette sauvegarde ? Les données actuelles seront remplacées."
-      );
+      const confirmed = await confirm({
+        title: "Importer cette sauvegarde ?",
+        message:
+          "Les données actuelles seront remplacées par le contenu du fichier importé. Pense à exporter une sauvegarde avant si tu veux garder l’état actuel.",
+        confirmLabel: "Importer",
+        cancelLabel: "Annuler",
+        tone: "danger",
+      });
 
       if (!confirmed) return;
 
@@ -73,10 +81,15 @@ export default function SettingsPage() {
     }
   }
 
-  function handleSyncEssentialFoods() {
-    const confirmed = window.confirm(
-      "Mettre à jour les aliments essentiels ? Les repas existants seront recalculés, mais tes données ne seront pas supprimées."
-    );
+  async function handleSyncEssentialFoods() {
+    const confirmed = await confirm({
+      title: "Mettre à jour les essentiels ?",
+      message:
+        "Les aliments essentiels seront mis à jour dans la base alimentaire. Les repas déjà enregistrés dans le journal garderont leurs valeurs historiques.",
+      confirmLabel: "Mettre à jour",
+      cancelLabel: "Annuler",
+      tone: "default",
+    });
 
     if (!confirmed) return;
 
@@ -84,16 +97,26 @@ export default function SettingsPage() {
     notify("Aliments essentiels mis à jour.");
   }
 
-  function handleReset() {
-    const firstConfirm = window.confirm(
-      "Réinitialiser toutes les données ? Cette action supprimera les repas, aliments ajoutés, objectifs et pesées."
-    );
+  async function handleReset() {
+    const firstConfirm = await confirm({
+      title: "Réinitialiser toutes les données ?",
+      message:
+        "Cette action supprimera les repas, aliments ajoutés, objectifs, repas types personnels et pesées stockés localement.",
+      confirmLabel: "Continuer",
+      cancelLabel: "Annuler",
+      tone: "danger",
+    });
 
     if (!firstConfirm) return;
 
-    const secondConfirm = window.confirm(
-      "Dernière confirmation : cette action est irréversible si tu n’as pas exporté une sauvegarde."
-    );
+    const secondConfirm = await confirm({
+      title: "Dernière confirmation",
+      message:
+        "Cette action est irréversible si tu n’as pas exporté une sauvegarde. Tu veux vraiment repartir de zéro ?",
+      confirmLabel: "Tout réinitialiser",
+      cancelLabel: "Annuler",
+      tone: "danger",
+    });
 
     if (!secondConfirm) return;
 
@@ -101,10 +124,15 @@ export default function SettingsPage() {
     notify("Données réinitialisées.");
   }
 
-  function handleRestartOnboarding() {
-    const confirmed = window.confirm(
-      "Relancer la configuration guidée ? Les données ne seront pas supprimées."
-    );
+  async function handleRestartOnboarding() {
+    const confirmed = await confirm({
+      title: "Relancer la configuration ?",
+      message:
+        "La configuration guidée va se rouvrir. Les repas, aliments, pesées et sauvegardes locales ne seront pas supprimés.",
+      confirmLabel: "Relancer",
+      cancelLabel: "Annuler",
+      tone: "default",
+    });
 
     if (!confirmed) return;
 
@@ -115,6 +143,8 @@ export default function SettingsPage() {
   return (
     <AppShell>
       <div className="space-y-5">
+        {message && <div className="mt-dashboard-toast">{message}</div>}
+
         <section className="pt-2">
           <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
             Paramètres
@@ -144,12 +174,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
-
-        {message && (
-          <div className="rounded-[18px] border border-[var(--mt-success-soft)] bg-[var(--mt-success-soft)] px-4 py-3 text-[13px] font-extrabold text-[var(--mt-success)]">
-            {message}
-          </div>
-        )}
 
         <section className="grid grid-cols-4 gap-2">
           <SettingsMiniStat label="Aliments" value={`${foods.length}`} />
@@ -218,7 +242,7 @@ export default function SettingsPage() {
           <SectionHead
             kicker="Base alimentaire"
             title="Mettre à jour les essentiels"
-            text="Ajoute les nouveaux aliments de base, met à jour les noms et les portions, puis recalcule les repas existants sans supprimer tes données."
+            text="Ajoute les nouveaux aliments de base et met à jour les noms ou portions de référence. Le journal déjà enregistré ne sera pas recalculé."
           />
 
           <button

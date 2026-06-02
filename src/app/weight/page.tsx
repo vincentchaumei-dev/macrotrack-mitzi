@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import { todayLocalDate } from "@/lib/nutrition";
 import { WeightLog } from "@/types/nutrition";
@@ -69,6 +70,8 @@ function getTrendText(delta: number | null) {
 }
 
 export default function WeightPage() {
+  const confirm = useConfirm();
+
   const {
     profile,
     weightLogs,
@@ -128,10 +131,16 @@ export default function WeightPage() {
     notify("Pesée ajoutée.");
   }
 
-  function handleDelete(log: WeightLog) {
-    const confirmed = window.confirm(
-      `Supprimer la pesée du ${log.date} (${log.weightKg} kg) ?`
-    );
+  async function handleDelete(log: WeightLog) {
+    const confirmed = await confirm({
+      title: "Supprimer cette pesée ?",
+      message: `La pesée du ${log.date} (${formatWeight(
+        log.weightKg
+      )} kg) sera retirée de l’historique.`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      tone: "danger",
+    });
 
     if (!confirmed) return;
 
@@ -142,6 +151,8 @@ export default function WeightPage() {
   return (
     <AppShell>
       <div className="space-y-5">
+        {message && <div className="mt-dashboard-toast">{message}</div>}
+
         <section className="pt-2">
           <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
             Progression
@@ -172,12 +183,6 @@ export default function WeightPage() {
           </div>
         </section>
 
-        {message && (
-          <div className="rounded-[18px] border border-[var(--mt-success-soft)] bg-[var(--mt-success-soft)] px-4 py-3 text-[13px] font-extrabold text-[var(--mt-success)]">
-            {message}
-          </div>
-        )}
-
         <section className="grid grid-cols-3 gap-3">
           <WeightMiniStat
             label="Moy. 7"
@@ -197,7 +202,7 @@ export default function WeightPage() {
         </section>
 
         <section className="mt-card overflow-hidden rounded-[28px]">
-          <div className="bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
+          <div className="mt-red-card bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
             <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/62">
               Tendance récente
             </p>
@@ -227,7 +232,8 @@ export default function WeightPage() {
                 Depuis début : {formatDelta(globalDelta)}
               </span>
               <span className="rounded-full bg-white/16 px-3 py-1.5 text-[11px] font-black text-white backdrop-blur">
-                Moyenne 7 : {average7 === null ? "—" : `${formatWeight(average7)} kg`}
+                Moyenne 7 :{" "}
+                {average7 === null ? "—" : `${formatWeight(average7)} kg`}
               </span>
             </div>
           </div>
@@ -389,7 +395,7 @@ function Field({
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label className="block">
@@ -430,37 +436,38 @@ function WeightBars({ logs }: { logs: WeightLog[] }) {
   const range = Math.max(0.1, max - min);
 
   return (
-    <div className="rounded-[24px] bg-[var(--mt-card-soft)] p-4 ring-1 ring-[var(--mt-line)]">
-      <div className="flex h-[210px] items-end gap-3">
-        {logs.map((log, index) => {
-          const height = 42 + ((log.weightKg - min) / range) * 118;
-          const isLast = index === logs.length - 1;
+    <div className="flex items-end gap-2">
+      {logs.map((log, index) => {
+        const ratio = range === 0 ? 0.6 : (log.weightKg - min) / range;
+        const heightPct = 20 + ratio * 80;
+        const isLast = index === logs.length - 1;
 
-          return (
-            <div key={log.id} className="flex flex-1 flex-col items-center gap-3">
-              <div className="flex h-[150px] w-full items-end justify-center">
-                <div
-                  className={`w-full max-w-[34px] rounded-full ${
-                    isLast
-                      ? "bg-gradient-to-t from-[var(--mt-rouge)] to-[var(--mt-rouge-soft)] shadow-[var(--mt-shadow-red)]"
-                      : "bg-[var(--mt-rouge-soft)]"
-                  }`}
-                  style={{ height }}
-                />
-              </div>
-
-              <div className="text-center">
-                <p className="text-[11px] font-black text-[var(--mt-ink)]">
-                  {formatWeight(log.weightKg)}
-                </p>
-                <p className="mt-1 text-[9px] font-bold text-[var(--mt-ink-3)]">
-                  {log.date.slice(5)}
-                </p>
-              </div>
+        return (
+          <div key={log.id} className="flex flex-1 flex-col items-center gap-2">
+            <div
+              className="relative w-full overflow-hidden rounded-[10px] bg-[var(--mt-card-soft)] ring-1 ring-[var(--mt-line)]"
+              style={{ height: 100 }}
+            >
+              <div
+                className={`absolute bottom-0 left-0 right-0 ${
+                  isLast
+                    ? "bg-[var(--mt-rouge)] shadow-[var(--mt-shadow-red)]"
+                    : "bg-[var(--mt-rouge-soft)]"
+                }`}
+                style={{ height: `${heightPct}%` }}
+              />
             </div>
-          );
-        })}
-      </div>
+            <div className="text-center">
+              <p className="text-[11px] font-black text-[var(--mt-ink)]">
+                {formatWeight(log.weightKg)}
+              </p>
+              <p className="text-[9px] font-bold text-[var(--mt-ink-3)]">
+                {log.date.slice(5)}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

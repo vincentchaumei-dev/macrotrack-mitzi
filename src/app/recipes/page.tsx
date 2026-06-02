@@ -2,6 +2,7 @@
 
 import { ReactNode, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   calculateMealTotals,
@@ -171,6 +172,8 @@ function buildMealFromTemplate(template: MealTemplate, date: string) {
 }
 
 export default function RecipesPage() {
+  const confirm = useConfirm();
+
   const { mealTemplates, addTemplateAsMeal, deleteMealTemplate } =
     useNutritionStore();
 
@@ -236,12 +239,16 @@ export default function RecipesPage() {
     notify("Repas type ajouté au journal.");
   }
 
-  function handleDeleteTemplate(template: MealTemplate) {
-    const confirmed = window.confirm(
-      template.isDefault
-        ? `Supprimer le repas type par défaut "${template.name}" ?`
-        : `Supprimer le repas type "${template.name}" ?`
-    );
+  async function handleDeleteTemplate(template: MealTemplate) {
+    const confirmed = await confirm({
+      title: "Supprimer ce repas type ?",
+      message: template.isDefault
+        ? `"${template.name}" est un repas type par défaut. Il sera retiré de la bibliothèque, mais les repas déjà ajoutés au journal ne changeront pas.`
+        : `"${template.name}" sera retiré de tes repas types. Les repas déjà ajoutés au journal ne changeront pas.`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      tone: "danger",
+    });
 
     if (!confirmed) return;
 
@@ -258,6 +265,8 @@ export default function RecipesPage() {
   return (
     <AppShell>
       <div className="space-y-5">
+        {message && <div className="mt-dashboard-toast">{message}</div>}
+
         <section className="pt-2">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -290,12 +299,6 @@ export default function RecipesPage() {
             </label>
           </div>
         </section>
-
-        {message && (
-          <div className="rounded-[18px] border border-[var(--mt-success-soft)] bg-[var(--mt-success-soft)] px-4 py-3 text-[13px] font-extrabold text-[var(--mt-success)]">
-            {message}
-          </div>
-        )}
 
         <section className="grid grid-cols-3 gap-3">
           <MiniStat label="Total" value={`${mealTemplates.length}`} />
@@ -475,8 +478,14 @@ function FeaturedTemplateCard({
         gradients[index % gradients.length]
       } p-5 text-white shadow-[var(--mt-shadow-lift)]`}
     >
-      <div className="absolute -right-14 -top-14 h-40 w-40 rounded-full bg-white/14" />
-      <div className="absolute -bottom-20 left-6 h-44 w-44 rounded-full bg-white/10" />
+      <div
+        aria-hidden="true"
+        className="absolute -right-14 -top-14 h-40 w-40 rounded-full bg-white/14"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-20 left-6 h-44 w-44 rounded-full bg-white/10"
+      />
 
       <div className="relative">
         <div className="flex flex-wrap gap-1.5">
