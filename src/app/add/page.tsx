@@ -589,7 +589,7 @@ function QuickFoodsRail({
           key={food.id}
           type="button"
           onClick={() => onSelect(food)}
-          className="min-w-[150px] max-w-[150px] rounded-[20px] bg-white p-3 text-left shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
+          className="w-[150px] shrink-0 rounded-[20px] bg-white p-3 text-left shadow-[var(--mt-shadow-sm)] ring-1 ring-[var(--mt-line)]"
         >
           <div className="grid h-10 w-10 place-items-center rounded-[14px] bg-[var(--mt-rouge-wash)] text-[var(--mt-rouge-deep)]">
             <span className="text-[16px] font-black">
@@ -812,7 +812,7 @@ function MealItemRow({
         <button
           type="button"
           onClick={onRemove}
-          className="mt-2 text-[11px] font-black text-[var(--mt-rouge)]"
+          className="mt-2 rounded-full bg-[var(--mt-rouge-wash)] px-3 py-2 text-[11px] font-black text-[var(--mt-rouge-deep)]"
         >
           Retirer
         </button>

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap");
 
 @import "tailwindcss";
 
@@ -3119,23 +3119,8 @@ a {
     font-weight: 750 !important;
   }
   
-  .mt-phone-shell p,
-  .mt-phone-shell li {
-    color: var(--mt-ink-2);
-  }
-
-  /* Red/dark colored backgrounds: inherit section color (white) */
-  .mt-phone-shell .mt-immersive p,
-  .mt-phone-shell .mt-immersive li,
-  .mt-phone-shell .mt-immersive span,
-  .mt-phone-shell .mt-red-card p,
-  .mt-phone-shell .mt-red-card li,
-  .mt-phone-shell .mt-red-card span,
-  .mt-phone-shell .mt-dark-card p,
-  .mt-phone-shell .mt-dark-card li,
-  .mt-phone-shell .mt-dark-card span {
-    color: inherit;
-  }
+  /* Texte corps : chaque composant gère sa couleur via ses classes Tailwind.
+     Une règle globale p/li ici écraserait les utilitaires Tailwind (unlayered > @layer utilities). */
 
   /* Dashboard number keeps impact */
   .mt-big-cal-number {
@@ -3340,3 +3325,282 @@ a {
   
   /* END MACROTRACK GLOBAL COHERENCE V8
      ========================================================= */
+
+
+/* =========================================================
+   FIXES POST-AUDIT — correctifs appliqués après audit mobile
+   ========================================================= */
+
+/* Fix 1 — Supprime le min-height forcé sur le hero immersif.
+   390 px saturait l'écran sur petits téléphones (iPhone SE/6/7/8).
+   Le contenu (semaine + chips de date + ring + macros) suffit à
+   remplir la section sans contrainte artificielle. */
+.mt-immersive {
+  min-height: 0 !important;
+}
+
+
+/* =========================================================
+   BUTTONS REDESIGN — premium mobile-native feel
+   Pill shapes · layered shadows · frosted glass · spring press
+   ========================================================= */
+
+/* ---------- PRIMARY — pill, rich gradient, vivid shadow ---------- */
+
+.mt-btn-primary,
+.RecipePrimary,
+.ImportPrimaryButton,
+.AuditPrimaryButton,
+.ui-button-primary {
+  border-radius: 999px !important;
+  border: none !important;
+  background: linear-gradient(
+    180deg,
+    #f2546a 0%,
+    #d4203f 36%,
+    #b8132f 72%,
+    #9a0d27 100%
+  ) !important;
+  color: #fff !important;
+  letter-spacing: -0.018em !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.26) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.16) inset,
+    0 6px 16px -4px rgba(176, 18, 44, 0.72),
+    0 20px 44px -14px rgba(130, 10, 32, 0.46) !important;
+}
+
+/* top-edge sheen */
+.mt-btn-primary::after,
+.RecipePrimary::after,
+.ImportPrimaryButton::after,
+.AuditPrimaryButton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    transparent 48%
+  );
+  pointer-events: none;
+}
+
+.mt-btn-primary:active,
+.RecipePrimary:active,
+.ImportPrimaryButton:active,
+.AuditPrimaryButton:active,
+.ui-button-primary:active {
+  transform: scale(0.974) translateY(1px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.14) inset,
+    0 3px 10px -4px rgba(176, 18, 44, 0.6),
+    0 10px 24px -12px rgba(130, 10, 32, 0.38) !important;
+}
+
+/* ---------- SOFT / SECONDARY — frosted glass with red tint ---------- */
+
+.mt-btn-soft,
+.FoodActionRed,
+.SettingsSoftButton,
+.AuditSoftButton,
+.ui-button-soft {
+  border-radius: 999px !important;
+  background: rgba(252, 234, 238, 0.9) !important;
+  color: #8e0c26 !important;
+  border: 1px solid rgba(192, 30, 60, 0.18) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.72) inset,
+    0 3px 12px -5px rgba(192, 30, 60, 0.16) !important;
+  letter-spacing: -0.014em !important;
+}
+
+.mt-btn-soft:active,
+.FoodActionRed:active,
+.SettingsSoftButton:active,
+.AuditSoftButton:active {
+  transform: scale(0.982) !important;
+}
+
+/* ---------- GHOST / NEUTRAL — elevated paper ---------- */
+
+.FoodAction,
+.JournalAction,
+.SettingsNeutralButton,
+.ImportSourceButton,
+.AuditNeutralButton,
+.OnboardingBackButton,
+.ui-button-ghost {
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  color: var(--mt-ink) !important;
+  border: 1px solid rgba(220, 212, 202, 0.8) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 6px -2px rgba(23, 19, 24, 0.08),
+    0 8px 24px -10px rgba(23, 19, 24, 0.12) !important;
+  letter-spacing: -0.014em !important;
+}
+
+.FoodAction:active,
+.JournalAction:active,
+.SettingsNeutralButton:active,
+.ImportSourceButton:active,
+.AuditNeutralButton:active,
+.OnboardingBackButton:active,
+.ui-button-ghost:active {
+  transform: scale(0.984) !important;
+  box-shadow:
+    0 0 0 rgba(255,255,255,0.9) inset,
+    0 1px 4px -2px rgba(23, 19, 24, 0.1),
+    0 4px 12px -8px rgba(23, 19, 24, 0.1) !important;
+}
+
+/* ---------- DANGER — wine border, clean white ---------- */
+
+.FoodActionDanger,
+.RecipeDanger,
+.SettingsDangerButton,
+.ui-button-danger {
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #8e0c26 !important;
+  border: 1px solid rgba(176, 18, 44, 0.24) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 2px 8px -4px rgba(176, 18, 44, 0.1) !important;
+}
+
+.FoodActionDanger:active,
+.RecipeDanger:active,
+.SettingsDangerButton:active {
+  transform: scale(0.984) !important;
+}
+
+/* ---------- JOURNAL ACTIONS — list-row style, not pill ---------- */
+
+.JournalAction {
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: 1px solid rgba(220, 212, 202, 0.75) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 8px -3px rgba(23, 19, 24, 0.07),
+    0 8px 22px -10px rgba(23, 19, 24, 0.1) !important;
+}
+
+/* ---------- QUICK ACTIONS (dashboard) — keep card style ---------- */
+
+.mt-quick-action {
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: 1px solid rgba(220, 212, 202, 0.7) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 8px -3px rgba(23, 19, 24, 0.06),
+    0 10px 26px -12px rgba(23, 19, 24, 0.1) !important;
+}
+
+.mt-quick-action-primary {
+  border: none !important;
+  background: linear-gradient(
+    180deg,
+    #f2546a 0%,
+    #d4203f 36%,
+    #b8132f 72%,
+    #9a0d27 100%
+  ) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 6px 16px -4px rgba(176, 18, 44, 0.68),
+    0 20px 44px -14px rgba(130, 10, 32, 0.42) !important;
+}
+
+/* ---------- FAB (+ central nav button) ---------- */
+
+.mt-fab {
+  background: linear-gradient(
+    155deg,
+    #f2546a 0%,
+    #d4203f 42%,
+    #9a0d27 100%
+  ) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.24) inset,
+    0 8px 20px -6px rgba(176, 18, 44, 0.72),
+    0 20px 44px -14px rgba(120, 10, 28, 0.48) !important;
+}
+
+.mt-fab:active {
+  transform: scale(0.94) !important;
+}
+
+/* ---------- DATE CHIPS (dashboard navigation) ---------- */
+
+.mt-date-chip--primary {
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 4px 14px -5px rgba(130, 10, 30, 0.2),
+    0 12px 28px -10px rgba(100, 8, 24, 0.14) !important;
+}
+
+/* ---------- TRANSITIONS (all buttons) ---------- */
+
+.mt-btn-primary,
+.mt-btn-soft,
+.FoodAction,
+.FoodActionRed,
+.FoodActionDanger,
+.JournalAction,
+.RecipePrimary,
+.RecipeDanger,
+.SettingsNeutralButton,
+.SettingsSoftButton,
+.SettingsDangerButton,
+.AuditPrimaryButton,
+.AuditSoftButton,
+.AuditNeutralButton,
+.ImportPrimaryButton,
+.ImportSourceButton,
+.OnboardingBackButton,
+.mt-quick-action,
+.mt-fab {
+  transition:
+    transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 140ms ease,
+    background 140ms ease !important;
+}
+
+/* respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .mt-btn-primary,
+  .mt-btn-soft,
+  .FoodAction,
+  .FoodActionRed,
+  .FoodActionDanger,
+  .JournalAction,
+  .RecipePrimary,
+  .RecipeDanger,
+  .SettingsNeutralButton,
+  .SettingsSoftButton,
+  .SettingsDangerButton,
+  .AuditPrimaryButton,
+  .AuditSoftButton,
+  .AuditNeutralButton,
+  .ImportPrimaryButton,
+  .ImportSourceButton,
+  .OnboardingBackButton,
+  .mt-quick-action,
+  .mt-fab {
+    transition: none !important;
+  }
+}
+
+/* END BUTTONS REDESIGN
+   ========================================================= */

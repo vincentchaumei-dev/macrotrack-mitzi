@@ -676,8 +676,8 @@ function CalorieRing({
   consumed: number;
   target: number;
 }) {
-  const SIZE = 160;
-  const STROKE = 12;
+  const SIZE = 136;
+  const STROKE = 10;
   const RADIUS = (SIZE - STROKE) / 2;
   const CIRC = 2 * Math.PI * RADIUS;
   const ratio = target > 0 ? consumed / target : 0;
