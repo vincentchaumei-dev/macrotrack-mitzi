@@ -171,7 +171,7 @@ export default function AnalyticsPage() {
                 onClick={() => setPeriod(item as Period)}
                 className={`rounded-full px-4 py-3 text-[14px] font-black transition ${
                   period === item
-                    ? "bg-[var(--mt-ink)] text-white"
+                    ? "bg-[var(--mt-ink)] text-[var(--mt-bg)]"
                     : "text-[var(--mt-ink-2)]"
                 }`}
               >

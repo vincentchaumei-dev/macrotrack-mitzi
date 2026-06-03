@@ -87,9 +87,15 @@ export default function RootLayout({
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      {/* Script synchrone anti-flash : applique .dark avant que React hydrate */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `try{var t=localStorage.getItem('macrotrack-theme');if(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`,
+        }}
+      />
       <body className="min-h-full flex flex-col">
-  <AppProviders>{children}</AppProviders>
-</body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

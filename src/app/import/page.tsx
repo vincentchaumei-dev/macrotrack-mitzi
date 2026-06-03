@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { BarcodeScanner } from "@/components/ui/BarcodeScanner";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 
 type ImportedProduct = {
@@ -56,6 +57,7 @@ export default function ImportPage() {
   const [products, setProducts] = useState<ImportedProduct[]>([]);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   const existingBarcodes = new Set(
     foods.map((food) => food.barcode).filter(Boolean)
@@ -66,19 +68,15 @@ export default function ImportPage() {
     window.setTimeout(() => setMessage(""), 3000);
   }
 
-  async function searchByBarcode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!barcode.trim()) return;
+  async function fetchByBarcode(code: string) {
+    if (!code.trim()) return;
 
     setIsLoading(true);
     setProducts([]);
 
     try {
       const response = await fetch(
-        `/api/openfoodfacts/barcode?barcode=${encodeURIComponent(
-          barcode.trim()
-        )}`
+        `/api/openfoodfacts/barcode?barcode=${encodeURIComponent(code.trim())}`
       );
 
       const data = await response.json();
@@ -94,6 +92,17 @@ export default function ImportPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function searchByBarcode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await fetchByBarcode(barcode);
+  }
+
+  async function handleBarcodeScan(scannedCode: string) {
+    setShowScanner(false);
+    setBarcode(scannedCode);
+    await fetchByBarcode(scannedCode);
   }
 
   async function searchByName(event: FormEvent<HTMLFormElement>) {
@@ -158,6 +167,13 @@ export default function ImportPage() {
 
   return (
     <AppShell>
+      {showScanner && (
+        <BarcodeScanner
+          onScan={handleBarcodeScan}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
       <div className="space-y-5">
         <section className="pt-2">
           <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
@@ -234,6 +250,25 @@ export default function ImportPage() {
             />
 
             <div className="mt-5 grid gap-3">
+              {/* Bouton scanner principal */}
+              <button
+                type="button"
+                onClick={() => setShowScanner(true)}
+                className="flex items-center justify-center gap-3 rounded-[18px] bg-[var(--mt-ink)] px-4 py-4 text-[13px] font-black text-white shadow-[var(--mt-shadow-lift)]"
+              >
+                <CameraIcon />
+                Scanner avec la caméra
+              </button>
+
+              {/* Séparateur */}
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-[var(--mt-line)]" />
+                <p className="text-[11px] font-bold text-[var(--mt-ink-3)]">
+                  ou saisir le code
+                </p>
+                <div className="h-px flex-1 bg-[var(--mt-line)]" />
+              </div>
+
               <input
                 value={barcode}
                 onChange={(event) => setBarcode(event.target.value)}
@@ -247,7 +282,7 @@ export default function ImportPage() {
                 disabled={isLoading || !barcode.trim()}
                 className="mt-btn-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {isLoading ? "Recherche..." : "Rechercher le code-barres"}
+                {isLoading ? "Recherche…" : "Rechercher le code-barres"}
               </button>
             </div>
           </form>
@@ -498,6 +533,15 @@ function MacroMini({ label, value }: { label: string; value: string }) {
         {value}
       </p>
     </div>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+      <circle cx="12" cy="13" r="3" />
+    </svg>
   );
 }
 

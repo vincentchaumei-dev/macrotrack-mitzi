@@ -52,7 +52,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-[390px] rounded-[30px] bg-white p-5 shadow-[0_28px_80px_rgba(23,19,24,0.24)] ring-1 ring-[var(--mt-line)]"
+            className="w-full max-w-[390px] rounded-[30px] bg-[var(--mt-card)] p-5 shadow-[0_28px_80px_rgba(23,19,24,0.24)] ring-1 ring-[var(--mt-line)]"
           >
             <div
               className={`grid h-12 w-12 place-items-center rounded-[18px] ${

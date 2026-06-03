@@ -4,6 +4,7 @@ import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { BarcodeScanner } from "@/components/ui/BarcodeScanner";
+import { RestaurantSheet } from "@/components/ui/RestaurantSheet";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   buildMealItem,
@@ -111,6 +112,7 @@ export default function AddMealPage() {
   const [quickMode, setQuickMode] = useState<QuickMode>("favorites");
   const [showScanner, setShowScanner] = useState(false);
   const [scanFlash, setScanFlash] = useState("");
+  const [showRestaurantSheet, setShowRestaurantSheet] = useState(false);
   const [showRecipeForm, setShowRecipeForm] = useState(false);
   const [recipeName, setRecipeName] = useState("");
   const [recipeFlash, setRecipeFlash] = useState("");
@@ -312,6 +314,16 @@ export default function AddMealPage() {
         />
       )}
 
+      {showRestaurantSheet && (
+        <RestaurantSheet
+          onAdd={(item) => {
+            setItems((current) => [...current, item]);
+            setShowRestaurantSheet(false);
+          }}
+          onClose={() => setShowRestaurantSheet(false)}
+        />
+      )}
+
       <div className="space-y-5">
         <section className="pt-2">
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
@@ -490,6 +502,24 @@ export default function AddMealPage() {
 
           {!selectedFood && query.trim().length === 0 && (
             <div className="mt-4">
+              {/* Restaurant mode banner */}
+              <button
+                type="button"
+                onClick={() => setShowRestaurantSheet(true)}
+                className="mb-4 flex w-full items-center gap-3 rounded-[22px] bg-gradient-to-r from-[#1a1208] to-[#2a1d0a] p-4 text-left"
+              >
+                <span className="text-[32px] leading-none">🍽️</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-black text-white">Mode restaurant</p>
+                  <p className="mt-0.5 text-[11px] font-semibold text-white/60">
+                    Pizza, burger, sushi… sans peser
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-white/14 px-3 py-1.5 text-[11px] font-black text-white/80">
+                  Ouvrir →
+                </span>
+              </button>
+
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {quickModes.map((mode) => (
                   <QuickTab

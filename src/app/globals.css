@@ -3328,6 +3328,266 @@ a {
 
 
 /* =========================================================
+   DARK MODE — classe .dark sur <html>
+   Brun très sombre (pas noir pur) · accent rouge inchangé
+   ========================================================= */
+
+.dark {
+  /* Backgrounds */
+  --mt-bg:           #0f0d0c;
+  --mt-bg-warm:      #1a1614;
+  --mt-card:         #1c1917;
+  --mt-card-soft:    #252220;
+
+  /* Texte */
+  --mt-ink:          #f2ede8;
+  --mt-ink-2:        #a09590;
+  --mt-ink-3:        #6a6260;
+
+  /* Rouge (légèrement plus lumineux sur fond sombre) */
+  --mt-rouge:        #e8455f;
+  --mt-rouge-lit:    #f26070;
+  --mt-rouge-deep:   #c01e3c;
+  --mt-rouge-soft:   rgba(232, 69, 95, 0.24);
+  --mt-rouge-wash:   rgba(232, 69, 95, 0.13);
+  --mt-rouge-glow:   rgba(232, 69, 95, 0.48);
+
+  /* Lignes / bordures */
+  --mt-line:         rgba(255, 255, 255, 0.08);
+  --mt-line-2:       rgba(255, 255, 255, 0.13);
+
+  /* States */
+  --mt-success:      #5abb90;
+  --mt-success-soft: rgba(90, 187, 144, 0.16);
+  --mt-warn:         #d49a50;
+  --mt-warn-soft:    rgba(212, 154, 80, 0.16);
+
+  /* Macros */
+  --mt-prot:         #e85570;
+  --mt-carb:         #d4a04a;
+  --mt-fat:          #7e8fc0;
+  --mt-prot-soft:    rgba(232, 85, 112, 0.18);
+  --mt-carb-soft:    rgba(212, 160, 74, 0.18);
+  --mt-fat-soft:     rgba(126, 143, 192, 0.18);
+
+  /* Ombres (plus prononcées sur fond sombre) */
+  --mt-shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 12px -6px rgba(0, 0, 0, 0.4);
+  --mt-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 14px 34px -16px rgba(0, 0, 0, 0.5);
+  --mt-shadow-lift:
+    0 2px 5px rgba(0, 0, 0, 0.35),
+    0 28px 60px -24px rgba(0, 0, 0, 0.6);
+  --mt-shadow-red:
+    0 14px 32px -10px rgba(232, 69, 95, 0.52);
+}
+
+/* Fond app */
+.dark body,
+.dark .mt-app-bg {
+  background:
+    radial-gradient(1100px 620px at 88% -12%, rgba(192, 30, 60, 0.12), transparent 58%),
+    radial-gradient(900px 560px at -8% 10%, rgba(192, 30, 60, 0.07), transparent 56%),
+    var(--mt-bg);
+}
+
+.dark .mt-phone-shell {
+  background:
+    radial-gradient(680px 420px at 84% -8%, rgba(192, 30, 60, 0.14), transparent 58%),
+    radial-gradient(520px 360px at -12% 12%, rgba(192, 30, 60, 0.08), transparent 60%),
+    var(--mt-bg) !important;
+}
+
+/* TopBar */
+.dark .mt-topbar {
+  background: rgba(15, 13, 12, 0.92) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* BottomNav */
+.dark .mt-bottom-nav {
+  background: rgba(20, 17, 15, 0.94) !important;
+  border-top-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 -22px 48px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Cards */
+.dark .mt-card,
+.dark .ui-card {
+  background: var(--mt-card) !important;
+  border-color: var(--mt-line) !important;
+}
+
+.dark .mt-soft-card,
+.dark .ui-card-soft {
+  background: var(--mt-card-soft) !important;
+  border-color: var(--mt-line) !important;
+}
+
+/* Menu sheet */
+.dark .mt-menu-sheet {
+  background: var(--mt-bg-warm);
+}
+
+/* Sheet du dashboard */
+.dark .mt-sheet {
+  background: var(--mt-bg);
+  box-shadow: 0 -12px 30px -16px rgba(0, 0, 0, 0.4);
+}
+
+/* Quick action cards */
+.dark .mt-quick-action {
+  background: var(--mt-card) !important;
+  border-color: var(--mt-line) !important;
+}
+
+/* Boutons ghost/neutres (fond blanc → fond card en dark) */
+.dark .FoodAction,
+.dark .JournalAction,
+.dark .SettingsNeutralButton,
+.dark .ImportSourceButton,
+.dark .AuditNeutralButton,
+.dark .OnboardingBackButton,
+.dark .ui-button-ghost {
+  background: var(--mt-card) !important;
+  color: var(--mt-ink) !important;
+  border-color: var(--mt-line) !important;
+}
+
+/* Boutons danger */
+.dark .FoodActionDanger,
+.dark .RecipeDanger,
+.dark .SettingsDangerButton,
+.dark .ui-button-danger {
+  background: var(--mt-card) !important;
+  border-color: var(--mt-rouge-soft) !important;
+}
+
+/* Inputs */
+.dark .AddInput,
+.dark .FoodInput,
+.dark .GoalInput,
+.dark .WeightInput,
+.dark .OnboardingInput,
+.dark .ImportInput,
+.dark .AuditInput,
+.dark .input,
+.dark .mt-phone-shell input,
+.dark .mt-phone-shell select,
+.dark .mt-phone-shell textarea {
+  background: var(--mt-card-soft) !important;
+  border-color: var(--mt-line) !important;
+  color: var(--mt-ink) !important;
+}
+
+.dark .AddInput:focus,
+.dark .FoodInput:focus,
+.dark .GoalInput:focus,
+.dark .WeightInput:focus,
+.dark .OnboardingInput:focus,
+.dark .ImportInput:focus,
+.dark .AuditInput:focus,
+.dark .input:focus,
+.dark .mt-phone-shell input:focus,
+.dark .mt-phone-shell select:focus,
+.dark .mt-phone-shell textarea:focus {
+  background: #2a2421 !important;
+  border-color: rgba(232, 69, 95, 0.5) !important;
+}
+
+/* Onboarding sheet */
+.dark .OnboardingSheet {
+  background: var(--mt-bg);
+}
+
+/* Insight card */
+.dark .mt-insight {
+  background: linear-gradient(120deg, rgba(232, 69, 95, 0.1), rgba(28, 25, 23, 0.8));
+  border-color: rgba(232, 69, 95, 0.2);
+}
+
+.dark .mt-insight-icon {
+  background: var(--mt-card);
+}
+
+/* Toast */
+.dark .mt-dashboard-toast {
+  background: rgba(242, 237, 232, 0.92);
+  color: #0f0d0c;
+}
+
+/* Date chips du dashboard */
+.dark .mt-date-chip--ghost {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.dark .mt-date-chip--primary {
+  background: rgba(242, 237, 232, 0.95);
+  color: var(--mt-rouge-deep);
+}
+
+/* Timeline du journal */
+.dark .mt-phone-shell article.relative > div.min-w-0 {
+  background: var(--mt-card);
+  border-color: var(--mt-line);
+}
+
+/* Search input dans Add avec le fond custom */
+.dark .rounded-\[21px\] {
+  background: var(--mt-card-soft) !important;
+}
+
+/* ---- Remplacement global bg-white → var(--mt-card) ---- */
+/* Couvre tous les éléments avec bg-white Tailwind dans le shell mobile  */
+
+.dark .mt-phone-shell .bg-white,
+.dark .mt-menu-sheet .bg-white {
+  background-color: var(--mt-card) !important;
+}
+
+/* Exceptions : les progress fills et éléments dans des sections colorées
+   doivent rester blancs (barres de progression sur fond rouge/sombre) */
+.dark .mt-phone-shell .mt-immersive .bg-white,
+.dark .mt-phone-shell [class*="mt-red-card"] .bg-white,
+.dark .mt-phone-shell .mt-dark-card .bg-white,
+.dark .mt-phone-shell .h-full.bg-white {
+  background-color: white !important;
+}
+
+/* ---- Carte sombre analytics ---- */
+/* bg-[var(--mt-ink)] devient crème en dark — forcer un vrai sombre */
+.dark .mt-dark-card {
+  background-color: #252220 !important;
+}
+
+/* ---- Sélecteur de période Analytics (7j / 14j / 30j) ---- */
+/* Conteneur et bouton actif */
+.dark .mt-phone-shell .rounded-full.bg-white.p-1\.5 {
+  background-color: var(--mt-card) !important;
+}
+
+/* ---- Date chips ghost — plus opaques pour lisibilité ---- */
+.dark .mt-date-chip--ghost {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* ---- AppShell topbar buttons (hamburger, close) ---- */
+.dark .mt-topbar .bg-white {
+  background-color: var(--mt-card) !important;
+}
+
+/* END DARK MODE
+   ========================================================= */
+
+
+/* =========================================================
    FIXES POST-AUDIT — correctifs appliqués après audit mobile
    ========================================================= */
 

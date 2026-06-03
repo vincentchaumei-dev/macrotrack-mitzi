@@ -2,7 +2,12 @@
 
 import { ReactNode } from "react";
 import { ConfirmProvider } from "@/components/ui/ConfirmProvider";
+import { ThemeProvider } from "@/components/ui/ThemeProvider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
-  return <ConfirmProvider>{children}</ConfirmProvider>;
+  return (
+    <ThemeProvider>
+      <ConfirmProvider>{children}</ConfirmProvider>
+    </ThemeProvider>
+  );
 }

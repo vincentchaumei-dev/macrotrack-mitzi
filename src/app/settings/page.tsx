@@ -3,6 +3,7 @@
 import { ChangeEvent, useRef, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
+import { useTheme, type Theme } from "@/components/ui/ThemeProvider";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import { AppData } from "@/types/nutrition";
 
@@ -38,6 +39,7 @@ export default function SettingsPage() {
     syncEssentialFoods,
   } = useNutritionStore();
 
+  const { theme, setTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [message, setMessage] = useState("");
 
@@ -182,6 +184,40 @@ export default function SettingsPage() {
           <SettingsMiniStat label="Pesées" value={`${weightLogs.length}`} />
         </section>
 
+        {/* ---- Thème ---- */}
+        <section className="mt-card rounded-[28px] p-5">
+          <SectionHead
+            kicker="Apparence"
+            title="Thème"
+            text="Clair pour la journée, sombre le soir. Auto suit les réglages de ton téléphone."
+          />
+
+          <div className="mt-5 rounded-full bg-[var(--mt-card-soft)] p-1 ring-1 ring-[var(--mt-line)]">
+            <div className="grid grid-cols-3">
+              {(
+                [
+                  { value: "light", label: "☀️ Clair" },
+                  { value: "dark",  label: "🌙 Sombre" },
+                  { value: "system", label: "Auto" },
+                ] as { value: Theme; label: string }[]
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setTheme(opt.value)}
+                  className={`rounded-full py-2.5 text-[13px] font-black transition-colors ${
+                    theme === opt.value
+                      ? "bg-[var(--mt-ink)] text-[var(--mt-bg)]"
+                      : "text-[var(--mt-ink-2)]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="mt-card overflow-hidden rounded-[28px]">
           <div className="bg-gradient-to-br from-[var(--mt-rouge-lit)] via-[var(--mt-rouge)] to-[var(--mt-rouge-deep)] p-5 text-white">
             <p className="text-[12px] font-black uppercase tracking-[0.18em] text-white/62">
@@ -270,31 +306,6 @@ export default function SettingsPage() {
           </button>
         </section>
 
-        <section className="mt-card rounded-[28px] p-5">
-          <SectionHead
-            kicker="Stockage"
-            title="Ce qu’il faut savoir"
-            text="Cette première version ne nécessite pas de compte. Les données restent dans le navigateur utilisé."
-          />
-
-          <div className="mt-5 grid gap-3">
-            <InfoRow
-              title="Pas de compte utilisateur"
-              text="Les données ne sont pas synchronisées entre plusieurs appareils."
-            />
-
-            <InfoRow
-              title="Sauvegarde recommandée"
-              text="Avant de changer de téléphone ou de navigateur, exporte les données."
-            />
-
-            <InfoRow
-              title="Confidentialité"
-              text="Les repas, objectifs et pesées restent stockés localement."
-            />
-          </div>
-        </section>
-
         <section className="rounded-[28px] border border-[var(--mt-rouge-soft)] bg-[var(--mt-rouge-wash)] p-5">
           <SectionHead
             kicker="Zone sensible"
@@ -365,17 +376,6 @@ function SettingsMiniStat({
       </p>
       <p className="mt-2 text-[20px] font-black leading-none tracking-[-0.04em] text-[var(--mt-ink)]">
         {value}
-      </p>
-    </div>
-  );
-}
-
-function InfoRow({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="rounded-[20px] bg-[var(--mt-card-soft)] p-4 ring-1 ring-[var(--mt-line)]">
-      <p className="text-[14px] font-black text-[var(--mt-ink)]">{title}</p>
-      <p className="mt-1 text-[13px] leading-6 text-[var(--mt-ink-2)]">
-        {text}
       </p>
     </div>
   );
