@@ -134,7 +134,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </button>
               </div>
 
-              <div className="grid max-h-[70svh] gap-2 overflow-y-auto pb-3">
+              <div className="min-h-0 flex-1 overflow-y-auto pb-1">
+                <div className="grid gap-2 px-[2px] pb-2">
                 {allNavigation.map((item) => {
                   const active = isActive(item.href);
 
@@ -162,6 +163,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </Link>
                   );
                 })}
+                </div>
               </div>
             </div>
           </div>

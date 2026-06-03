@@ -520,7 +520,7 @@ export default function AddMealPage() {
                 </span>
               </button>
 
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto py-[2px] pb-1">
                 {quickModes.map((mode) => (
                   <QuickTab
                     key={mode.value}
@@ -769,7 +769,7 @@ function QuickFoodsRail({
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="flex gap-2 overflow-x-auto py-[2px] pb-1">
       {foods.map((food) => (
         <button
           key={food.id}
