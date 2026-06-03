@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 type OpenFoodFactsProduct = {
   code?: string;
   product_name?: string;
+  product_name_es?: string;
   product_name_fr?: string;
   brands?: string;
   categories?: string;
@@ -112,7 +113,10 @@ function normalizeProduct(product: OpenFoodFactsProduct) {
   return {
     barcode: product.code ?? "",
     productName:
-      product.product_name_fr || product.product_name || "Produit sans nom",
+      product.product_name_es ||
+      product.product_name_fr ||
+      product.product_name ||
+      "Producto sin nombre",
     brands: product.brands || "",
     category: product.categories?.split(",")?.[0]?.trim() || "Produits importés",
     imageUrl: product.image_front_small_url || product.image_url || "",
@@ -141,6 +145,7 @@ export async function GET(request: NextRequest) {
   const fields = [
     "code",
     "product_name",
+    "product_name_es",
     "product_name_fr",
     "brands",
     "categories",
@@ -155,6 +160,8 @@ export async function GET(request: NextRequest) {
     search_terms: query,
     page_size: "12",
     fields,
+    cc: "es",   // prioritise produits vendus en Espagne
+    lc: "es",   // noms en espagnol en priorité
   });
 
   const response = await fetch(

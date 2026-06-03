@@ -3,6 +3,7 @@
 import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
+import { BarcodeScanner } from "@/components/ui/BarcodeScanner";
 import { useNutritionStore } from "@/hooks/useNutritionStore";
 import {
   buildMealItem,
@@ -97,7 +98,7 @@ function getFrequentFoods(meals: Meal[], foods: Food[], limit = 12) {
 
 export default function AddMealPage() {
   const router = useRouter();
-  const { foods, meals, addMeal, createMealTemplate } = useNutritionStore();
+  const { foods, meals, addMeal, addFood, createMealTemplate } = useNutritionStore();
 
   const [date, setDate] = useState(todayLocalDate());
   const [type, setType] = useState<MealType>("breakfast");
@@ -108,6 +109,8 @@ export default function AddMealPage() {
   const [items, setItems] = useState<MealItem[]>([]);
   const [includeFullDatabase, setIncludeFullDatabase] = useState(false);
   const [quickMode, setQuickMode] = useState<QuickMode>("favorites");
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanFlash, setScanFlash] = useState("");
   const [showRecipeForm, setShowRecipeForm] = useState(false);
   const [recipeName, setRecipeName] = useState("");
   const [recipeFlash, setRecipeFlash] = useState("");
@@ -216,6 +219,64 @@ export default function AddMealPage() {
     setItems((current) => current.filter((item) => item.id !== itemId));
   }
 
+  async function handleBarcodeScan(barcode: string) {
+    setShowScanner(false);
+
+    // Déjà dans la bibliothèque ?
+    const existing = foods.find((f) => f.barcode === barcode);
+    if (existing) {
+      selectFood(existing);
+      setScanFlash(`${existing.name} trouvé dans ta bibliothèque ✓`);
+      window.setTimeout(() => setScanFlash(""), 3000);
+      return;
+    }
+
+    setScanFlash("Recherche du produit…");
+
+    try {
+      const res = await fetch(
+        `/api/openfoodfacts/barcode?barcode=${encodeURIComponent(barcode)}`
+      );
+
+      if (!res.ok) {
+        setScanFlash("Produit non trouvé dans Open Food Facts.");
+        window.setTimeout(() => setScanFlash(""), 4000);
+        return;
+      }
+
+      const data = await res.json();
+      const p = data.product;
+
+      const newFood = addFood({
+        name: p.productName,
+        brand: p.brands || undefined,
+        barcode: p.barcode || barcode,
+        imageUrl: p.imageUrl || undefined,
+        externalUrl: p.externalUrl || undefined,
+        dataQualityStatus: p.dataQualityStatus ?? "partial",
+        category: p.category || "Produits importés",
+        servingSizeG: p.servingSizeG ?? null,
+        caloriesPer100g: p.caloriesPer100g,
+        proteinPer100g: p.proteinPer100g,
+        carbsPer100g: p.carbsPer100g,
+        fatPer100g: p.fatPer100g,
+        saturatedFatPer100g: p.saturatedFatPer100g ?? null,
+        sugarPer100g: p.sugarPer100g ?? null,
+        fiberPer100g: p.fiberPer100g ?? null,
+        saltPer100g: p.saltPer100g ?? null,
+        source: "openfoodfacts",
+        verified: false,
+      });
+
+      selectFood(newFood);
+      setScanFlash(`${newFood.name} ajouté depuis Open Food Facts ✓`);
+      window.setTimeout(() => setScanFlash(""), 3000);
+    } catch {
+      setScanFlash("Erreur de connexion. Réessaie.");
+      window.setTimeout(() => setScanFlash(""), 4000);
+    }
+  }
+
   function handleSaveAsRecipe() {
     if (items.length === 0) return;
 
@@ -244,6 +305,13 @@ export default function AddMealPage() {
 
   return (
     <AppShell>
+      {showScanner && (
+        <BarcodeScanner
+          onScan={handleBarcodeScan}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
       <div className="space-y-5">
         <section className="pt-2">
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--mt-rouge)]">
@@ -383,6 +451,18 @@ export default function AddMealPage() {
             </button>
           </div>
 
+          {scanFlash && (
+            <div className={`mt-4 rounded-[14px] px-3 py-2.5 text-center text-[12px] font-bold ${
+              scanFlash.includes("non trouvé") || scanFlash.includes("Erreur")
+                ? "bg-[var(--mt-warn-soft)] text-[var(--mt-warn)]"
+                : scanFlash === "Recherche du produit…"
+                  ? "bg-[var(--mt-card-soft)] text-[var(--mt-ink-2)]"
+                  : "bg-[var(--mt-success-soft)] text-[var(--mt-success)]"
+            }`}>
+              {scanFlash}
+            </div>
+          )}
+
           <label className="relative mt-4 block">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--mt-ink-3)]">
               <SearchIcon />
@@ -394,9 +474,18 @@ export default function AddMealPage() {
                 setQuery(event.target.value);
                 setSelectedFoodId("");
               }}
-              className="w-full rounded-[21px] border border-[var(--mt-line)] bg-[var(--mt-card-soft)] py-4 pl-12 pr-4 text-[15px] font-black text-[var(--mt-ink)] outline-none placeholder:text-[var(--mt-ink-3)]"
+              className="w-full rounded-[21px] border border-[var(--mt-line)] bg-[var(--mt-card-soft)] py-4 pl-12 pr-14 text-[15px] font-black text-[var(--mt-ink)] outline-none placeholder:text-[var(--mt-ink-3)]"
               placeholder="Rechercher un aliment..."
             />
+
+            <button
+              type="button"
+              onClick={() => setShowScanner(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-[var(--mt-rouge)] text-white shadow-[var(--mt-shadow-red)]"
+              aria-label="Scanner un code-barres"
+            >
+              <BarcodeIcon />
+            </button>
           </label>
 
           {!selectedFood && query.trim().length === 0 && (
@@ -947,6 +1036,15 @@ function SearchIcon() {
     >
       <circle cx="11" cy="11" r="7" />
       <path d="M21 21l-4-4" />
+    </svg>
+  );
+}
+
+function BarcodeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 5v14" /><path d="M8 5v14" /><path d="M12 5v14" />
+      <path d="M17 5v14" /><path d="M21 5v14" />
     </svg>
   );
 }
