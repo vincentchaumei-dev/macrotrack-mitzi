@@ -378,6 +378,7 @@ function MealTimelineCard({
 }) {
   const totals = calculateDayTotals([meal]);
   const color = getMealColor(index);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <article className="relative flex gap-3">
@@ -387,37 +388,89 @@ function MealTimelineCard({
         style={{ background: color }}
       />
 
-      <div className="min-w-0 flex-1 rounded-[22px] border border-[var(--mt-line)] bg-white p-4 shadow-[var(--mt-shadow)]">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-rouge)]">
-              {mealTypeLabels[meal.type]}
-            </p>
-            <h3 className="mt-1 truncate text-[17px] font-black tracking-[-0.02em] text-[var(--mt-ink)]">
-              {meal.name || mealTypeLabels[meal.type]}
-            </h3>
-            <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-3)]">
-              {meal.items.length} aliment(s)
-            </p>
+      <div className="min-w-0 flex-1 rounded-[22px] border border-[var(--mt-line)] bg-white shadow-[var(--mt-shadow)]">
+
+        {/* Header cliquable — toggle expand */}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="w-full p-4 text-left"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-rouge)]">
+                {mealTypeLabels[meal.type]}
+              </p>
+              <h3 className="mt-1 truncate text-[17px] font-black tracking-[-0.02em] text-[var(--mt-ink)]">
+                {meal.name || mealTypeLabels[meal.type]}
+              </h3>
+              <p className="mt-1 text-[12px] font-bold text-[var(--mt-ink-3)]">
+                {meal.items.length} aliment{meal.items.length > 1 ? "s" : ""}
+              </p>
+            </div>
+
+            <div className="flex shrink-0 items-start gap-2">
+              <div className="text-right">
+                <p className="mt-display text-[26px] font-semibold leading-none tracking-[-0.03em] text-[var(--mt-ink)]">
+                  {formatMacro(totals.calories, "")}
+                </p>
+                <p className="mt-1 text-[9px] font-black uppercase tracking-[0.08em] text-[var(--mt-ink-3)]">
+                  kcal
+                </p>
+              </div>
+              <span
+                className="mt-1 text-[var(--mt-ink-3)]"
+                style={{
+                  display: "inline-block",
+                  transition: "transform 200ms ease",
+                  transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              >
+                <ChevronDownIcon />
+              </span>
+            </div>
           </div>
 
-          <div className="text-right">
-            <p className="mt-display text-[26px] font-semibold leading-none tracking-[-0.03em] text-[var(--mt-ink)]">
-              {formatMacro(totals.calories, "")}
-            </p>
-            <p className="mt-1 text-[9px] font-black uppercase tracking-[0.08em] text-[var(--mt-ink-3)]">
-              kcal
-            </p>
+          <div className="mt-3 flex gap-1.5">
+            <MealMacroPill color="#c53350" label="P" value={`${formatMacro(totals.proteinG, "")}g`} />
+            <MealMacroPill color="#d69b3f" label="G" value={`${formatMacro(totals.carbsG, "")}g`} />
+            <MealMacroPill color="#6e7ca6" label="L" value={`${formatMacro(totals.fatG, "")}g`} />
           </div>
-        </div>
+        </button>
 
-        <div className="mt-3 flex gap-1.5">
-          <MealMacroPill color="#c53350" label="P" value={`${formatMacro(totals.proteinG, "")}g`} />
-          <MealMacroPill color="#d69b3f" label="G" value={`${formatMacro(totals.carbsG, "")}g`} />
-          <MealMacroPill color="#6e7ca6" label="L" value={`${formatMacro(totals.fatG, "")}g`} />
-        </div>
+        {/* Détail des aliments (visible si expanded) */}
+        {expanded && meal.items.length > 0 && (
+          <div className="mx-4 mb-3 overflow-hidden rounded-[16px] ring-1 ring-[var(--mt-line)]">
+            {meal.items.map((item, i) => (
+              <div
+                key={item.id}
+                className={`flex items-center justify-between gap-3 px-3 py-2.5 ${
+                  i > 0 ? "border-t border-[var(--mt-line)]" : ""
+                } bg-[var(--mt-card-soft)]`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-black text-[var(--mt-ink)]">
+                    {item.foodNameSnapshot}
+                  </p>
+                  <p className="mt-0.5 text-[11px] font-bold text-[var(--mt-ink-3)]">
+                    {item.quantityG} g
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[14px] font-black text-[var(--mt-ink)]">
+                    {formatMacro(item.calories, "")} kcal
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-bold text-[var(--mt-ink-3)]">
+                    P {formatMacro(item.proteinG, "")}g · G {formatMacro(item.carbsG, "")}g · L {formatMacro(item.fatG, "")}g
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        {/* Actions */}
+        <div className="flex flex-wrap gap-2 px-4 pb-4">
           <button
             type="button"
             onClick={onDuplicate}
@@ -444,5 +497,22 @@ function MealTimelineCard({
         </div>
       </div>
     </article>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }

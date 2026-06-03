@@ -97,7 +97,7 @@ function getFrequentFoods(meals: Meal[], foods: Food[], limit = 12) {
 
 export default function AddMealPage() {
   const router = useRouter();
-  const { foods, meals, addMeal } = useNutritionStore();
+  const { foods, meals, addMeal, createMealTemplate } = useNutritionStore();
 
   const [date, setDate] = useState(todayLocalDate());
   const [type, setType] = useState<MealType>("breakfast");
@@ -108,6 +108,9 @@ export default function AddMealPage() {
   const [items, setItems] = useState<MealItem[]>([]);
   const [includeFullDatabase, setIncludeFullDatabase] = useState(false);
   const [quickMode, setQuickMode] = useState<QuickMode>("favorites");
+  const [showRecipeForm, setShowRecipeForm] = useState(false);
+  const [recipeName, setRecipeName] = useState("");
+  const [recipeFlash, setRecipeFlash] = useState("");
 
   const selectedFood = foods.find((food) => food.id === selectedFoodId) ?? null;
 
@@ -211,6 +214,19 @@ export default function AddMealPage() {
 
   function removeItem(itemId: string) {
     setItems((current) => current.filter((item) => item.id !== itemId));
+  }
+
+  function handleSaveAsRecipe() {
+    if (items.length === 0) return;
+
+    const templateName = recipeName.trim() || name.trim() || "Ma recette";
+
+    createMealTemplate({ name: templateName, type, items });
+
+    setShowRecipeForm(false);
+    setRecipeName("");
+    setRecipeFlash(`"${templateName}" ajoutée aux recettes ✓`);
+    window.setTimeout(() => setRecipeFlash(""), 3000);
   }
 
   function saveMeal(destination: "journal" | "dashboard") {
@@ -512,6 +528,57 @@ export default function AddMealPage() {
             >
               Enregistrer et voir le journal
             </button>
+
+            {recipeFlash && (
+              <p className="rounded-[14px] bg-[var(--mt-success-soft)] px-3 py-2.5 text-center text-[12px] font-bold text-[var(--mt-success)]">
+                {recipeFlash}
+              </p>
+            )}
+
+            {items.length > 0 && !showRecipeForm && !recipeFlash && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRecipeName(name.trim());
+                  setShowRecipeForm(true);
+                }}
+                className="rounded-[18px] bg-[var(--mt-card-soft)] px-4 py-3.5 text-[13px] font-black text-[var(--mt-ink-2)] ring-1 ring-[var(--mt-line)]"
+              >
+                Sauvegarder en recette…
+              </button>
+            )}
+
+            {showRecipeForm && (
+              <div className="rounded-[20px] bg-[var(--mt-card-soft)] p-4 ring-1 ring-[var(--mt-line)]">
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--mt-rouge)]">
+                  Nom de la recette
+                </p>
+                <input
+                  value={recipeName}
+                  onChange={(e) => setRecipeName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveAsRecipe()}
+                  className="AddInput mt-3"
+                  placeholder="Ex : Tortillas au poulet"
+                  autoFocus
+                />
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveAsRecipe}
+                    className="mt-btn-primary py-3 text-[13px]"
+                  >
+                    Sauvegarder
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowRecipeForm(false)}
+                    className="rounded-[18px] bg-white px-4 py-3 text-[13px] font-black text-[var(--mt-ink)] ring-1 ring-[var(--mt-line)]"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -695,26 +762,73 @@ function SelectedFoodCard({
         </button>
       </div>
 
-      <label className="mt-4 block">
-        <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
+      {/* Stepper de portions — seulement si l'aliment a une portion définie */}
+      {food.servingSizeG ? (
+        <>
+          <div className="mt-4">
+            <p className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
+              Portions
+            </p>
+            <div className="flex items-center overflow-hidden rounded-[18px] ring-1 ring-[var(--mt-line)]">
+              <button
+                type="button"
+                onClick={() => {
+                  const count = Math.max(1, Math.round(parseQuantity(quantityG) / food.servingSizeG!));
+                  const next = Math.max(1, count - 1);
+                  onChangeQuantity(String(next * food.servingSizeG!));
+                }}
+                className="flex h-[64px] w-[64px] shrink-0 items-center justify-center bg-[var(--mt-card-soft)] text-[28px] font-black text-[var(--mt-ink-2)]"
+              >
+                −
+              </button>
+
+              <div className="flex-1 border-x border-[var(--mt-line)] bg-[var(--mt-card-soft)] py-2 text-center">
+                <p className="text-[34px] font-black leading-none tracking-[-0.04em] text-[var(--mt-ink)]">
+                  {Math.max(1, Math.round(parseQuantity(quantityG) / food.servingSizeG!))}
+                </p>
+                <p className="mt-1 text-[11px] font-bold text-[var(--mt-ink-3)]">
+                  {(() => {
+                    const count = Math.max(1, Math.round(parseQuantity(quantityG) / food.servingSizeG!));
+                    const label = food.servingName || "portion";
+                    const actualG = parseQuantity(quantityG) > 0 ? parseQuantity(quantityG) : count * food.servingSizeG!;
+                    return `${label} · ${actualG}g`;
+                  })()}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const count = Math.max(1, Math.round(parseQuantity(quantityG) / food.servingSizeG!));
+                  onChangeQuantity(String((count + 1) * food.servingSizeG!));
+                }}
+                className="flex h-[64px] w-[64px] shrink-0 items-center justify-center bg-[var(--mt-card-soft)] text-[28px] font-black text-[var(--mt-ink-2)]"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="my-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[var(--mt-line)]" />
+            <p className="text-[11px] font-bold text-[var(--mt-ink-3)]">ou en grammes précis</p>
+            <div className="h-px flex-1 bg-[var(--mt-line)]" />
+          </div>
+        </>
+      ) : (
+        <p className="mb-2 mt-4 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--mt-ink-2)]">
           Quantité
-        </span>
-        <input
-          value={quantityG}
-          onChange={(event) => onChangeQuantity(event.target.value)}
-          className="AddInput"
-          placeholder="Ex : 150"
-        />
-      </label>
+        </p>
+      )}
+
+      <input
+        value={quantityG}
+        onChange={(event) => onChangeQuantity(event.target.value)}
+        className="AddInput"
+        placeholder="Ex : 150"
+      />
 
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-        {food.servingSizeG && (
-          <QuantityChip
-            label={`${food.servingName || "Portion"} · ${food.servingSizeG}g`}
-            onClick={() => onChangeQuantity(String(food.servingSizeG))}
-          />
-        )}
-
         {[50, 100, 150, 200].map((quantity) => (
           <QuantityChip
             key={quantity}

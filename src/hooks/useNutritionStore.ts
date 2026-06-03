@@ -9,6 +9,7 @@ import {
   Meal,
   MealItem,
   MealTemplate,
+  MealType,
   NutritionGoals,
   UserProfile,
   WeightLog,
@@ -483,6 +484,31 @@ export function useNutritionStore() {
     return template;
   }
 
+  function createMealTemplate(input: {
+    name: string;
+    type: MealType;
+    items: MealItem[];
+  }) {
+    const date = new Date().toISOString();
+
+    const template: MealTemplate = {
+      id: createId(),
+      name: input.name.trim() || "Ma recette",
+      type: input.type,
+      items: cloneMealItems(input.items),
+      isDefault: false,
+      createdAt: date,
+      updatedAt: date,
+    };
+
+    setData((current) => ({
+      ...current,
+      mealTemplates: [...current.mealTemplates, template],
+    }));
+
+    return template;
+  }
+
   function deleteMealTemplate(templateId: string) {
     setData((current) => ({
       ...current,
@@ -598,6 +624,7 @@ export function useNutritionStore() {
     duplicateMeal,
     copyDay,
     saveMealAsTemplate,
+    createMealTemplate,
     deleteMealTemplate,
     addTemplateAsMeal,
     updateProfile,
